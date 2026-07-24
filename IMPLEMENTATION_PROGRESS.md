@@ -1,5 +1,11 @@
 # OpenAVFoundationDriver Implementation Progress
 
+## Apple semantic trace
+
+- [x] Portable SPI responsibilities are mapped to Apple capture semantics
+- [x] Framework-owned graph policy is separated from driver-owned operations
+- [x] Remaining event and control contracts are recorded
+
 ## Smoke definition
 
 The package smoke path must execute discovery, device open, validated capability

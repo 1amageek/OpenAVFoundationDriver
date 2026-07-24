@@ -37,6 +37,8 @@ camera-model branch.
 ## Design
 
 Read [DESIGN.md](DESIGN.md) before adding a public value or protocol.
+Use [APPLE_API_TRACE.md](APPLE_API_TRACE.md) to trace each portable driver
+responsibility back to Apple capture semantics.
 
 ## Build
 
