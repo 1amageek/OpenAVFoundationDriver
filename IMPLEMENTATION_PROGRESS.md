@@ -31,12 +31,11 @@ target.
 - Native Swift and WASM providers, opened handles, streams, and sinks are
   `Sendable`; provider and lifecycle operations are asynchronous.
 - Embedded Swift uses the same semantic operations through synchronous,
-  owner-isolated protocol requirements. The current Swift 6.3.1 Embedded
-  compiler crashes during SIL generation when a caller invokes an asynchronous
-  typed-throwing protocol requirement. Its `CaptureSampleSink` also inherits
-  `AnyObject` directly because an existential sink cannot cross the empty
-  `CapturePlatformConcurrencyContract` inheritance boundary in an actual
-  `stream(for:sink:)` call. Native Swift and WASM keep the `Sendable` marker.
+  owner-isolated protocol requirements. Its `CaptureSampleSink` inherits
+  `AnyObject` directly. The fixed Swift 6.4 development snapshot and matching
+  Embedded SDK compile the callable synchronous lifecycle path. Native Swift and
+  WASM keep the `Sendable` marker. An asynchronous Embedded existential path is
+  not part of the verified contract.
 - The Embedded contract is not a fallback or simulated success path. Concrete
   drivers still perform discovery, configuration, delivery, and shutdown, and
   propagate the same typed driver failures.
@@ -71,16 +70,24 @@ WASM and Embedded WASM builds complete the first smoke slice.
 - Native:
   `xcodebuild test -scheme OpenAVFoundationDriver -destination 'platform=macOS'
   -maximum-test-execution-time-allowance 30
-  -only-testing:OpenAVFoundationDriverTests`
-  — passed 6 behavior tests on 2026-07-24.
+  -only-testing:OpenAVFoundationDriverTests
+  SWIFT_EXEC=~/Library/Developer/Toolchains/swift-latest.xctoolchain/usr/bin/swiftc`
+  — passed 6 behavior tests with the Swift 6.4 development snapshot compiler on
+  2026-07-25.
 - WASM:
-  `swiftly run swift build --swift-sdk
-  swift-6.3.1-RELEASE_wasm --target OpenAVFoundationDriver`
-  — passed after `swift package clean` on 2026-07-24.
+  `~/Library/Developer/Toolchains/swift-latest.xctoolchain/usr/bin/swift build
+  --swift-sdks-path ~/Library/org.swift.swiftpm/swift-sdks
+  --swift-sdk swift-6.4.x-DEVELOPMENT-SNAPSHOT-2026-07-17-a_wasm
+  --target OpenAVFoundationDriver`
+  — passed after `swift package clean` with the matching Swift 6.4 development
+  snapshot compiler and SDK on 2026-07-25.
 - Embedded WASM:
-  `swiftly run swift build --swift-sdk
-  swift-6.3.1-RELEASE_wasm-embedded --target OpenAVFoundationDriver`
-  — passed after `swift package clean` on 2026-07-24.
+  `~/Library/Developer/Toolchains/swift-latest.xctoolchain/usr/bin/swift build
+  --swift-sdks-path ~/Library/org.swift.swiftpm/swift-sdks
+  --swift-sdk swift-6.4.x-DEVELOPMENT-SNAPSHOT-2026-07-17-a_wasm-embedded
+  --target OpenAVFoundationDriver`
+  — passed after `swift package clean` with the matching Swift 6.4 development
+  snapshot compiler and SDK on 2026-07-25.
 
 ## Deferred after smoke
 

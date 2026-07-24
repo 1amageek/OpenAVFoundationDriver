@@ -217,17 +217,16 @@ starts and shuts it down when the session stops or fails.
 - Protocols and shared values are `Sendable`.
 - `@unchecked Sendable` is not permitted.
 
-The preceding asynchronous model applies to Native Swift and WASM. Embedded
-Swift 6.3.1 cannot currently lower calls to asynchronous typed-throwing protocol
-requirements. Under `hasFeature(Embedded)`, providers, opened handles, and
-streams therefore expose synchronous owner-isolated forms of the same semantic
-operations, and the concurrency marker does not require `Sendable`.
-`CaptureSampleSink` inherits `AnyObject` directly on Embedded because the
-Swift 6.3.1 Embedded compiler cannot pass its existential through the otherwise
-empty `CapturePlatformConcurrencyContract` inheritance boundary. Native Swift
-and WASM retain the `Sendable` marker. This is a platform execution contract,
-not a success fallback: concrete implementations must perform the operation and
-preserve every typed failure.
+The preceding asynchronous model applies to Native Swift and WASM. Under
+`hasFeature(Embedded)`, providers, opened handles, and streams expose synchronous
+owner-isolated forms of the same semantic operations, and the concurrency marker
+does not require `Sendable`. `CaptureSampleSink` inherits `AnyObject` directly
+on Embedded. This profile is verified with the fixed Swift 6.4 development
+snapshot compiler and matching Embedded SDK. Converging it with the asynchronous
+existential path requires a separate callable behavior test before changing the
+contract. Native Swift and WASM retain the `Sendable` marker. This is a platform
+execution contract, not a success fallback: concrete implementations must
+perform the operation and preserve every typed failure.
 
 ## Platform model
 

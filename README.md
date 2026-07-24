@@ -43,7 +43,15 @@ responsibility back to Apple capture semantics.
 ## Build
 
 ```bash
-swift build
-swiftly run swift build --swift-sdk swift-6.3.1-RELEASE_wasm
-swiftly run swift build --swift-sdk swift-6.3.1-RELEASE_wasm-embedded
+xcodebuild test \
+  -scheme OpenAVFoundationDriver \
+  -destination 'platform=macOS' \
+  -maximum-test-execution-time-allowance 30 \
+  SWIFT_EXEC="$HOME/Library/Developer/Toolchains/swift-latest.xctoolchain/usr/bin/swiftc"
+"$HOME/Library/Developer/Toolchains/swift-latest.xctoolchain/usr/bin/swift" build \
+  --swift-sdks-path "$HOME/Library/org.swift.swiftpm/swift-sdks" \
+  --swift-sdk swift-6.4.x-DEVELOPMENT-SNAPSHOT-2026-07-17-a_wasm
+"$HOME/Library/Developer/Toolchains/swift-latest.xctoolchain/usr/bin/swift" build \
+  --swift-sdks-path "$HOME/Library/org.swift.swiftpm/swift-sdks" \
+  --swift-sdk swift-6.4.x-DEVELOPMENT-SNAPSHOT-2026-07-17-a_wasm-embedded
 ```
