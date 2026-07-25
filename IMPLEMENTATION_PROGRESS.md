@@ -74,6 +74,8 @@ typed and no concrete provider may be installed by the production target.
       terminal-failure event contract
 - [x] Typed video orientation, stabilization, and mirroring configuration
 - [x] Stream-specific validation for video connection policy
+- [x] Reusable synchronized stream-event recorder and declared-capability
+      conformance validation
 
 ## Current work
 

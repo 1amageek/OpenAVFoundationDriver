@@ -383,6 +383,26 @@ public enum CaptureProviderConformanceSuite {
         }
     }
 
+    public static func validate(
+        _ event: CaptureStreamEvent,
+        capabilities: CaptureStreamEventCapabilities
+    ) throws(CaptureProviderConformanceError) {
+        let requiredCapability: CaptureStreamEventCapabilities
+        switch event {
+        case .interrupted, .resumed:
+            requiredCapability = .interruptions
+        case .pressure:
+            requiredCapability = .systemPressure
+        case .dropped:
+            requiredCapability = .sourceDrops
+        case .failed:
+            requiredCapability = .terminalFailures
+        }
+        guard capabilities.contains(requiredCapability) else {
+            throw .undeclaredStreamEvent(event)
+        }
+    }
+
     public static func validateInitialSnapshot(
         in recorder: CaptureDeviceEventRecorder,
         driverID: CaptureDriverID

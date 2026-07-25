@@ -1,6 +1,5 @@
 import OpenAVFoundationDriver
 import OpenAVFoundationDriverTesting
-import Synchronization
 import Testing
 
 @Test("Typed camera controls validate configuration against capabilities")
@@ -418,6 +417,16 @@ func streamEventContracts() throws {
             .resumed
         ]
     )
+    try CaptureProviderConformanceSuite.validate(
+        .pressure(pressure),
+        capabilities: [.systemPressure]
+    )
+    #expect(throws: CaptureProviderConformanceError.self) {
+        try CaptureProviderConformanceSuite.validate(
+            .pressure(pressure),
+            capabilities: [.interruptions]
+        )
+    }
 }
 
 private struct ControlFixture {
@@ -505,26 +514,6 @@ private struct ControlFixture {
             supportsConcurrentStreams: false,
             controls: controls
         )
-    }
-}
-
-private final class CaptureStreamEventRecorder:
-    CaptureStreamEventSink,
-    Sendable
-{
-    private let storage = Mutex<[CaptureStreamEvent]>([])
-
-    var events: [CaptureStreamEvent] {
-        storage.withLock { events in events }
-    }
-
-    func offer(
-        _ event: CaptureStreamEvent
-    ) -> CaptureStreamEventDisposition {
-        storage.withLock { events in
-            events.append(event)
-        }
-        return .continueStreaming
     }
 }
 

@@ -14,4 +14,5 @@ public enum CaptureProviderConformanceError: Error, Sendable, Equatable {
     case handleRemainedOpen(CaptureDeviceID)
     case missingInitialDeviceSnapshot(CaptureDriverID)
     case streamGroupMismatch(CaptureDeviceID)
+    case undeclaredStreamEvent(CaptureStreamEvent)
 }
