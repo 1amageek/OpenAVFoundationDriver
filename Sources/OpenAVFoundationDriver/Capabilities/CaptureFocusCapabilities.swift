@@ -12,11 +12,13 @@ public struct CaptureFocusCapabilities: Sendable, Hashable {
             throw .missingControlModes(.focus)
         }
 
-        var observedModes: Set<CaptureFocusMode> = []
+        var observedModes: [CaptureFocusMode] = []
+        observedModes.reserveCapacity(supportedModes.count)
         for mode in supportedModes {
-            guard observedModes.insert(mode).inserted else {
+            guard !observedModes.contains(mode) else {
                 throw .duplicateControlMode(.focus)
             }
+            observedModes.append(mode)
         }
         if let lensPositionRange {
             guard lensPositionRange.minimum >= 0,

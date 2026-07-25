@@ -69,6 +69,7 @@ typed and no concrete provider may be installed by the production target.
 - [x] Native `xcodebuild` behavior tests
 - [x] WASM build
 - [x] Embedded WASM build
+- [x] Cross-target bounded metadata validation without `Set` runtime dependence
 
 ## Current work
 
@@ -81,6 +82,12 @@ product exercises discovery, open, configuration, zero-copy delivery, repeated
 stream, atomic stream-group, event-subscription, and handle shutdown, and typed
 failures.
 
+All duplicate and unordered-equality checks over bounded descriptor, capability,
+control, topology, and conformance-suite metadata use ordered array membership
+on every target. This preserves typed validation semantics and avoids the fixed
+regular WASM SDK's runtime `Set.insert` trap without adding a target-specific
+branch.
+
 ## Test evidence
 
 - Native:
@@ -91,7 +98,7 @@ failures.
   SWIFT_EXEC=~/Library/Developer/Toolchains/
   swift-6.4.x-DEVELOPMENT-SNAPSHOT-2026-07-17-a.xctoolchain/usr/bin/swiftc`
   — passed 11 behavior tests with the Swift 6.4 development snapshot compiler on
-  2026-07-25 against OpenCoreMedia `07bd447` and OpenCoreVideo `29b4664`.
+  2026-07-25 against OpenCoreMedia `07bd447` and OpenCoreVideo `2d528af`.
 - Native Thread Sanitizer:
   the same 11 behavior tests passed with `-enableThreadSanitizer YES` and the
   fixed Swift 6.4 development snapshot on 2026-07-25.
@@ -118,7 +125,7 @@ failures.
   snapshot, open, configuration, one same-identity `CMSampleBuffer` delivery,
   stream shutdown, and handle shutdown through protocol existentials, then
   exited successfully under Node 24 on 2026-07-25. The executable resolved
-  OpenCoreMedia `07bd447` and OpenCoreVideo `29b4664`.
+  OpenCoreMedia `07bd447` and OpenCoreVideo `2d528af`.
 
 ## Concrete provider work outside this package
 

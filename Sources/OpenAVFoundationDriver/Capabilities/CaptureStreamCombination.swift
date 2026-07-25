@@ -8,17 +8,19 @@ public struct CaptureStreamCombination: Sendable, Hashable {
             throw .missingConcurrentStreamRequests
         }
 
-        var observedStreamIDs: Set<CaptureStreamID> = []
+        var observedStreamIDs: [CaptureStreamID] = []
+        observedStreamIDs.reserveCapacity(streamIDs.count)
         for streamID in streamIDs {
-            guard observedStreamIDs.insert(streamID).inserted else {
+            guard !observedStreamIDs.contains(streamID) else {
                 throw .duplicateStreamID(streamID)
             }
+            observedStreamIDs.append(streamID)
         }
         self.streamIDs = streamIDs
     }
 
     public func matches(_ streamIDs: [CaptureStreamID]) -> Bool {
         self.streamIDs.count == streamIDs.count
-            && Set(self.streamIDs) == Set(streamIDs)
+            && self.streamIDs.allSatisfy(streamIDs.contains)
     }
 }

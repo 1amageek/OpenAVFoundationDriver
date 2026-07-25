@@ -75,9 +75,12 @@ extension CaptureDeviceCapabilities {
         for sink in sinks {
             sinkIDs.append(sink.streamID)
         }
+        let sinkIDsAreUnique = sinkIDs.indices.allSatisfy { index in
+            !sinkIDs[..<index].contains(sinkIDs[index])
+        }
         guard sinkIDs.count == request.streamIDs.count,
-              Set(sinkIDs).count == sinkIDs.count,
-              Set(sinkIDs) == Set(request.streamIDs) else {
+              sinkIDsAreUnique,
+              sinkIDs.allSatisfy(request.streamIDs.contains) else {
             throw .unsupportedStreamCombination(
                 deviceID: deviceID,
                 streamIDs: request.streamIDs

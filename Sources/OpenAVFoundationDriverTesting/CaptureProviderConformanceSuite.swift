@@ -142,7 +142,10 @@ public enum CaptureProviderConformanceSuite {
             throw .driver(error)
         }
         guard group.deviceID == request.deviceID,
-              Set(group.streamIDs) == Set(request.streamIDs) else {
+              haveSameUniqueMembers(
+                  group.streamIDs,
+                  request.streamIDs
+              ) else {
             throw .streamGroupMismatch(request.deviceID)
         }
         do {
@@ -305,7 +308,10 @@ public enum CaptureProviderConformanceSuite {
             throw .driver(error)
         }
         guard group.deviceID == request.deviceID,
-              Set(group.streamIDs) == Set(request.streamIDs) else {
+              haveSameUniqueMembers(
+                  group.streamIDs,
+                  request.streamIDs
+              ) else {
             throw .streamGroupMismatch(request.deviceID)
         }
         do {
@@ -323,7 +329,7 @@ public enum CaptureProviderConformanceSuite {
         driverID: CaptureDriverID,
         request: CaptureDiscoveryRequest
     ) throws(CaptureProviderConformanceError) {
-        var observedDeviceIDs: Set<CaptureDeviceID> = []
+        var observedDeviceIDs: [CaptureDeviceID] = []
         for descriptor in descriptors {
             guard descriptor.deviceID.driverID == driverID else {
                 throw .unexpectedDriver(
@@ -331,9 +337,10 @@ public enum CaptureProviderConformanceSuite {
                     actual: descriptor.deviceID.driverID
                 )
             }
-            guard observedDeviceIDs.insert(descriptor.deviceID).inserted else {
+            guard !observedDeviceIDs.contains(descriptor.deviceID) else {
                 throw .duplicateDeviceID(descriptor.deviceID)
             }
+            observedDeviceIDs.append(descriptor.deviceID)
             let mediaTypeMatches = request.mediaType.map {
                 descriptor.mediaTypes.contains($0)
             } ?? true
@@ -400,5 +407,21 @@ public enum CaptureProviderConformanceSuite {
                 == snapshot.capabilities.revision else {
             throw .resultingSnapshotMismatch(expectedDeviceID)
         }
+    }
+
+    private static func haveSameUniqueMembers<Element: Equatable>(
+        _ lhs: [Element],
+        _ rhs: [Element]
+    ) -> Bool {
+        guard lhs.count == rhs.count else {
+            return false
+        }
+        for (index, element) in lhs.enumerated() {
+            guard !lhs[..<index].contains(element),
+                  rhs.contains(element) else {
+                return false
+            }
+        }
+        return true
     }
 }

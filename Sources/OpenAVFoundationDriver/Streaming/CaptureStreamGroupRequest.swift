@@ -11,14 +11,16 @@ public struct CaptureStreamGroupRequest: Sendable, Hashable {
             throw .missingConcurrentStreamRequests
         }
 
-        var observedStreamIDs: Set<CaptureStreamID> = []
+        var observedStreamIDs: [CaptureStreamID] = []
+        observedStreamIDs.reserveCapacity(requests.count)
         for request in requests {
             guard let streamID = request.streamID else {
                 throw .missingConcurrentStreamRequests
             }
-            guard observedStreamIDs.insert(streamID).inserted else {
+            guard !observedStreamIDs.contains(streamID) else {
                 throw .duplicateStreamID(streamID)
             }
+            observedStreamIDs.append(streamID)
             guard request.configuration.deviceID
                     == firstRequest.configuration.deviceID else {
                 throw .streamRequestDeviceMismatch(

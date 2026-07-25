@@ -32,11 +32,13 @@ public struct CaptureDeviceCapabilities: Sendable, Hashable {
             throw .missingFormats(deviceID: deviceID)
         }
 
-        var observedFormatIDs: Set<CaptureDeviceFormatID> = []
+        var observedFormatIDs: [CaptureDeviceFormatID] = []
+        observedFormatIDs.reserveCapacity(formats.count)
         for format in formats {
-            guard observedFormatIDs.insert(format.formatID).inserted else {
+            guard !observedFormatIDs.contains(format.formatID) else {
                 throw .duplicateFormatID(format.formatID)
             }
+            observedFormatIDs.append(format.formatID)
         }
         guard observedFormatIDs.contains(preferredFormatID) else {
             throw .preferredFormatNotFound(
@@ -45,11 +47,13 @@ public struct CaptureDeviceCapabilities: Sendable, Hashable {
             )
         }
 
-        var observedStreamIDs: Set<CaptureStreamID> = []
+        var observedStreamIDs: [CaptureStreamID] = []
+        observedStreamIDs.reserveCapacity(streams.count)
         for stream in streams {
-            guard observedStreamIDs.insert(stream.streamID).inserted else {
+            guard !observedStreamIDs.contains(stream.streamID) else {
                 throw .duplicateStreamID(stream.streamID)
             }
+            observedStreamIDs.append(stream.streamID)
             for formatID in stream.formatIDs {
                 guard observedFormatIDs.contains(formatID) else {
                     throw .streamFormatNotFound(
@@ -64,7 +68,10 @@ public struct CaptureDeviceCapabilities: Sendable, Hashable {
             throw .missingStreamCombinations(deviceID)
         }
 
-        var observedCombinationSets: Set<Set<CaptureStreamID>> = []
+        var observedCombinations: [[CaptureStreamID]] = []
+        observedCombinations.reserveCapacity(
+            supportedStreamCombinations.count
+        )
         var hasConcurrentCombination = false
         for combination in supportedStreamCombinations {
             for streamID in combination.streamIDs {
@@ -75,10 +82,13 @@ public struct CaptureDeviceCapabilities: Sendable, Hashable {
                     )
                 }
             }
-            let streamIDSet = Set(combination.streamIDs)
-            guard observedCombinationSets.insert(streamIDSet).inserted else {
+            guard !observedCombinations.contains(where: {
+                $0.count == combination.streamIDs.count
+                    && $0.allSatisfy(combination.streamIDs.contains)
+            }) else {
                 throw .duplicateStreamCombination
             }
+            observedCombinations.append(combination.streamIDs)
             hasConcurrentCombination = hasConcurrentCombination
                 || combination.streamIDs.count > 1
         }

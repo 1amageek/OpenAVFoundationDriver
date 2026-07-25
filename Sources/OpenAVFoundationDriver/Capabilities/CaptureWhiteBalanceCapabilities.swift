@@ -10,11 +10,13 @@ public struct CaptureWhiteBalanceCapabilities: Sendable, Hashable {
             throw .missingControlModes(.whiteBalance)
         }
 
-        var observedModes: Set<CaptureWhiteBalanceMode> = []
+        var observedModes: [CaptureWhiteBalanceMode] = []
+        observedModes.reserveCapacity(supportedModes.count)
         for mode in supportedModes {
-            guard observedModes.insert(mode).inserted else {
+            guard !observedModes.contains(mode) else {
                 throw .duplicateControlMode(.whiteBalance)
             }
+            observedModes.append(mode)
         }
 
         self.supportedModes = supportedModes

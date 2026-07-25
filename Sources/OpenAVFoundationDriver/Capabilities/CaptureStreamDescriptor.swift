@@ -12,14 +12,16 @@ public struct CaptureStreamDescriptor: Sendable, Hashable {
             throw .missingStreamFormatIDs(streamID)
         }
 
-        var observedFormatIDs: Set<CaptureDeviceFormatID> = []
+        var observedFormatIDs: [CaptureDeviceFormatID] = []
+        observedFormatIDs.reserveCapacity(formatIDs.count)
         for formatID in formatIDs {
-            guard observedFormatIDs.insert(formatID).inserted else {
+            guard !observedFormatIDs.contains(formatID) else {
                 throw .duplicateStreamFormatID(
                     streamID: streamID,
                     formatID: formatID
                 )
             }
+            observedFormatIDs.append(formatID)
         }
 
         self.streamID = streamID

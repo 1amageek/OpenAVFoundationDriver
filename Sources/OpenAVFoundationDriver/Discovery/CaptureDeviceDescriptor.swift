@@ -29,11 +29,13 @@ public struct CaptureDeviceDescriptor: Sendable, Hashable {
             throw .missingMediaTypes
         }
 
-        var observedMediaTypes: Set<CaptureMediaTypeID> = []
+        var observedMediaTypes: [CaptureMediaTypeID] = []
+        observedMediaTypes.reserveCapacity(mediaTypes.count)
         for mediaType in mediaTypes {
-            guard observedMediaTypes.insert(mediaType).inserted else {
+            guard !observedMediaTypes.contains(mediaType) else {
                 throw .duplicateMediaType(mediaType)
             }
+            observedMediaTypes.append(mediaType)
         }
 
         self.deviceID = deviceID

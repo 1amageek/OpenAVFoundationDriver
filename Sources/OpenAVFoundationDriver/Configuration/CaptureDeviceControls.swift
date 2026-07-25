@@ -12,11 +12,13 @@ public struct CaptureDeviceControls: Sendable, Hashable {
         zoom: CaptureZoomConfiguration? = nil,
         deviceSpecific: [CaptureDeviceControlSetting] = []
     ) throws(CaptureContractError) {
-        var observedControlIDs: Set<CaptureDeviceControlID> = []
+        var observedControlIDs: [CaptureDeviceControlID] = []
+        observedControlIDs.reserveCapacity(deviceSpecific.count)
         for setting in deviceSpecific {
-            guard observedControlIDs.insert(setting.controlID).inserted else {
+            guard !observedControlIDs.contains(setting.controlID) else {
                 throw .duplicateDeviceControlSetting(setting.controlID)
             }
+            observedControlIDs.append(setting.controlID)
         }
 
         self.focus = focus

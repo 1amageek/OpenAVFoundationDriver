@@ -22,11 +22,13 @@ public struct CaptureDeviceTypeSelection: Sendable, Hashable {
             throw .missingDeviceTypes
         }
 
-        var observedDeviceTypes: Set<CaptureDeviceTypeID> = []
+        var observedDeviceTypes: [CaptureDeviceTypeID] = []
+        observedDeviceTypes.reserveCapacity(deviceTypeIDs.count)
         for deviceTypeID in deviceTypeIDs {
-            guard observedDeviceTypes.insert(deviceTypeID).inserted else {
+            guard !observedDeviceTypes.contains(deviceTypeID) else {
                 throw .duplicateDeviceType(deviceTypeID)
             }
+            observedDeviceTypes.append(deviceTypeID)
         }
 
         self.storage = .matching(deviceTypeIDs)

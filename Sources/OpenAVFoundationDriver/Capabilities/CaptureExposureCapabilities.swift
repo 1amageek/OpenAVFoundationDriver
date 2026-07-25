@@ -14,11 +14,13 @@ public struct CaptureExposureCapabilities: Sendable, Hashable {
             throw .missingControlModes(.exposure)
         }
 
-        var observedModes: Set<CaptureExposureMode> = []
+        var observedModes: [CaptureExposureMode] = []
+        observedModes.reserveCapacity(supportedModes.count)
         for mode in supportedModes {
-            guard observedModes.insert(mode).inserted else {
+            guard !observedModes.contains(mode) else {
                 throw .duplicateControlMode(.exposure)
             }
+            observedModes.append(mode)
         }
 
         self.supportedModes = supportedModes

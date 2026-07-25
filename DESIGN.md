@@ -293,6 +293,23 @@ OpenCoreVideo.
 Dynamic plugin loading is not required. Embedded firmware can construct a fixed
 provider set at startup.
 
+### Bounded metadata validation on the Swift 6.4 WASM baseline
+
+Descriptor, capability, control, stream-topology, and conformance-suite
+duplicate checks operate on small, already-materialized metadata arrays. They
+use ordered `Array.contains` scans on every target. This preserves public
+ordering and typed duplicate failures without introducing a second hash-storage
+allocation.
+
+The fixed 2026-07-17 regular WASM runtime traps in `Set.insert` while constructing
+even a one-media-type descriptor. Array validation is therefore part of the
+shared implementation, not a WASM conditional fallback. Semantic set equality
+for stream combinations is expressed as equal count plus membership after each
+combination has independently passed uniqueness validation. The conformance
+suite independently rejects duplicate observed members before comparing
+membership. Large dynamic data sets and media payloads are outside this decision
+and retain their own performance-specific storage contracts.
+
 Every concrete provider package implements the same `CaptureDeviceProvider`
 boundary. Providers with concurrent endpoints additionally conform their opened
 handle to `CaptureMultiStreamDeviceHandle`. Browser, replay, V4L2, GStreamer, and

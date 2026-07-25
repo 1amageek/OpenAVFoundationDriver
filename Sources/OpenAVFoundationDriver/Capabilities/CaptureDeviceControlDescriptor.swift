@@ -17,17 +17,19 @@ public struct CaptureDeviceControlDescriptor: Sendable, Hashable {
             guard !options.isEmpty else {
                 throw .missingDeviceControlOptions(controlID)
             }
-            var observedOptions: Set<String> = []
+            var observedOptions: [String] = []
+            observedOptions.reserveCapacity(options.count)
             for option in options {
                 guard !option.isEmpty else {
                     throw .invalidControlConfiguration(controlID)
                 }
-                guard observedOptions.insert(option).inserted else {
+                guard !observedOptions.contains(option) else {
                     throw .duplicateDeviceControlOption(
                         controlID: controlID,
                         option: option
                     )
                 }
+                observedOptions.append(option)
             }
         }
 
