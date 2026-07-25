@@ -60,6 +60,8 @@ shared-state isolation or `Sendable` contracts.
 - [x] Typed hot-plug initial-snapshot and delta event contract
 - [x] Non-dropping event sink and idempotent subscription shutdown
 - [x] Validated descriptor and capability snapshots
+- [x] Synchronous sample-offer timing contract aligned with framework delegate
+      delivery; no false nonblocking guarantee
 - [x] Explicit provider-preferred format and validated default configuration
 - [x] Provider and opened-handle lifecycle contracts
 - [x] Capability-revision-bound device configuration
@@ -128,7 +130,7 @@ requested value.
   SWIFT_EXEC=~/Library/Developer/Toolchains/
   swift-6.4.x-DEVELOPMENT-SNAPSHOT-2026-07-17-a.xctoolchain/usr/bin/swiftc`
   — passed 15 behavior tests with the Swift 6.4 development snapshot compiler on
-  2026-07-25 against OpenCoreMedia `07bd447` and OpenCoreVideo `2d528af`.
+  2026-07-25 against OpenCoreMedia `07bd447` and OpenCoreVideo `6861652`.
 - Native Thread Sanitizer:
   the same 15 behavior tests passed with `-enableThreadSanitizer YES` and the
   fixed Swift 6.4 development snapshot on 2026-07-25.
@@ -140,7 +142,8 @@ requested value.
   --target OpenAVFoundationDriver`
   and the same command with `--target OpenAVFoundationDriverTesting`
   — both products passed with isolated scratch directories and the matching
-  Swift 6.4 development snapshot compiler and SDK on 2026-07-25.
+  Swift 6.4 development snapshot compiler and SDK on 2026-07-25 against
+  OpenCoreVideo `6861652`.
 - Embedded WASM:
   `~/Library/Developer/Toolchains/
   swift-6.4.x-DEVELOPMENT-SNAPSHOT-2026-07-17-a.xctoolchain/usr/bin/swift build
@@ -149,7 +152,8 @@ requested value.
   --target OpenAVFoundationDriver`
   and the same command with `--target OpenAVFoundationDriverTesting`
   — both products passed with isolated scratch directories and the matching
-  Swift 6.4 development snapshot compiler and SDK on 2026-07-25.
+  Swift 6.4 development snapshot compiler and SDK on 2026-07-25 against
+  OpenCoreVideo `6861652`.
 - Embedded callable lifecycle:
   a temporary external WASI executable exercised discovery, the initial topology
   snapshot, open, configuration, one same-identity `CMSampleBuffer` delivery,

@@ -194,10 +194,13 @@ A stream delivers leased `CMSampleBuffer` values. Image samples retain their
 `CVPixelBuffer` storage lease. The driver does not copy or convert payloads merely
 to cross the contract boundary.
 
-The sample sink is a nonblocking offer boundary suitable for capture threads and
-Embedded systems. It returns whether the sample was accepted, dropped, or the
-stream should stop. OpenAVFoundation owns the bounded queues and downstream
-fan-out policy.
+The sample sink is a synchronous offer boundary suitable for capture threads
+and Embedded systems. It returns whether the sample was accepted, dropped, or
+the stream should stop. The call includes the sink callback's processing time;
+implementations must return promptly and must not perform unbounded I/O on the
+capture path. The boundary does not materialize media bytes or introduce an
+implicit wait. OpenAVFoundation owns bounded queues and downstream fan-out
+policy.
 
 These streaming declarations use OpenCoreMedia's reviewed `CMSampleBuffer`
 ownership surface. The driver package does not introduce a competing sample
@@ -260,7 +263,9 @@ starts and shuts it down when the session stops or fails.
 - Registry membership is short in-memory state and belongs to OpenAVFoundation.
 - Provider discovery and open operations may suspend.
 - Opened handle and stream lifecycle is ordered and may suspend.
-- Sample offer is synchronous, bounded, and nonblocking.
+- Sample offer is synchronous and disposition-returning. Its duration includes
+  sink callback processing, so implementations must return promptly and keep
+  unbounded I/O off the capture path.
 - No event is emitted while holding a mutex.
 - No `await` occurs inside `withLock`.
 - Protocols and shared values are `Sendable`.
