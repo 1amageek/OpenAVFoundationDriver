@@ -70,6 +70,10 @@ typed and no concrete provider may be installed by the production target.
 - [x] WASM build
 - [x] Embedded WASM build
 - [x] Cross-target bounded metadata validation without `Set` runtime dependence
+- [x] Capability-declared interruption, resume, source-drop, pressure, and
+      terminal-failure event contract
+- [x] Typed video orientation, stabilization, and mirroring configuration
+- [x] Stream-specific validation for video connection policy
 
 ## Current work
 
@@ -88,6 +92,15 @@ on every target. This preserves typed validation semantics and avoids the fixed
 regular WASM SDK's runtime `Set.insert` trap without adding a target-specific
 branch.
 
+Stream descriptors now declare the exact runtime event families and video
+connection policies that a provider supports. Event-capable streams refine
+`CaptureStream` through `CaptureStreamEventSource`; providers that do not
+implement this refinement cannot claim event capability. Event sinks receive
+ordered typed values outside provider locks, and stream shutdown must clear the
+sink before returning. Video orientation, stabilization, and mirroring remain
+part of the stream request and fail with field-specific typed errors when the
+selected stream does not advertise the requested value.
+
 ## Test evidence
 
 - Native:
@@ -97,10 +110,10 @@ branch.
   -only-testing:OpenAVFoundationDriverTests
   SWIFT_EXEC=~/Library/Developer/Toolchains/
   swift-6.4.x-DEVELOPMENT-SNAPSHOT-2026-07-17-a.xctoolchain/usr/bin/swiftc`
-  — passed 11 behavior tests with the Swift 6.4 development snapshot compiler on
+  — passed 14 behavior tests with the Swift 6.4 development snapshot compiler on
   2026-07-25 against OpenCoreMedia `07bd447` and OpenCoreVideo `2d528af`.
 - Native Thread Sanitizer:
-  the same 11 behavior tests passed with `-enableThreadSanitizer YES` and the
+  the same 14 behavior tests passed with `-enableThreadSanitizer YES` and the
   fixed Swift 6.4 development snapshot on 2026-07-25.
 - WASM:
   `~/Library/Developer/Toolchains/
@@ -132,4 +145,5 @@ branch.
 - Concrete replay, browser, V4L2, GStreamer, and Argus providers
 - Platform mappings for the implemented control and multi-stream contracts
 - Platform mappings for the implemented topology event contract
-- Runtime interruption and recovery events for already-open devices
+- Platform mappings for runtime interruption, source-drop, pressure, and video
+  connection policy contracts

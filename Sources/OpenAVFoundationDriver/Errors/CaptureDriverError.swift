@@ -39,6 +39,21 @@ public enum CaptureDriverError: Error, Sendable, Equatable {
         deviceID: CaptureDeviceID,
         streamIDs: [CaptureStreamID]
     )
+    case unsupportedVideoOrientation(
+        deviceID: CaptureDeviceID,
+        streamID: CaptureStreamID,
+        orientation: CaptureVideoOrientation
+    )
+    case unsupportedVideoStabilizationMode(
+        deviceID: CaptureDeviceID,
+        streamID: CaptureStreamID,
+        mode: CaptureVideoStabilizationMode
+    )
+    case unsupportedVideoMirroringMode(
+        deviceID: CaptureDeviceID,
+        streamID: CaptureStreamID,
+        mode: CaptureVideoMirroringMode
+    )
     case bufferExhausted(CaptureDeviceID)
     case backendFailure(
         driverID: CaptureDriverID,

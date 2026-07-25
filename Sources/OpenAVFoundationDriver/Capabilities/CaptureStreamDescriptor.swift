@@ -2,11 +2,17 @@ public struct CaptureStreamDescriptor: Sendable, Hashable {
     public let streamID: CaptureStreamID
     public let mediaType: CaptureMediaTypeID
     public let formatIDs: [CaptureDeviceFormatID]
+    public let eventCapabilities: CaptureStreamEventCapabilities
+    public let videoConnectionCapabilities:
+        CaptureVideoConnectionCapabilities?
 
     public init(
         streamID: CaptureStreamID,
         mediaType: CaptureMediaTypeID,
-        formatIDs: [CaptureDeviceFormatID]
+        formatIDs: [CaptureDeviceFormatID],
+        eventCapabilities: CaptureStreamEventCapabilities = [],
+        videoConnectionCapabilities:
+            CaptureVideoConnectionCapabilities? = nil
     ) throws(CaptureContractError) {
         guard !formatIDs.isEmpty else {
             throw .missingStreamFormatIDs(streamID)
@@ -27,5 +33,7 @@ public struct CaptureStreamDescriptor: Sendable, Hashable {
         self.streamID = streamID
         self.mediaType = mediaType
         self.formatIDs = formatIDs
+        self.eventCapabilities = eventCapabilities
+        self.videoConnectionCapabilities = videoConnectionCapabilities
     }
 }

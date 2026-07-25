@@ -65,4 +65,7 @@ public enum CaptureContractError: Error, Sendable, Equatable {
         actual: UInt64
     )
     case streamRequestControlMismatch(CaptureDeviceID)
+    case duplicateVideoOrientation
+    case duplicateVideoStabilizationMode
+    case duplicateVideoMirroringMode
 }

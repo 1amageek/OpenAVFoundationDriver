@@ -59,6 +59,10 @@ extension CaptureDeviceCapabilities {
                     streamIDs: request.streamIDs
                 )
             }
+            try validate(
+                streamRequest.videoConnectionConfiguration,
+                for: descriptor
+            )
         }
 
         guard supportedStreamCombinations.contains(
@@ -87,6 +91,43 @@ extension CaptureDeviceCapabilities {
             )
         }
 
+        return request
+    }
+
+    /// Returns the request after validating its stream and connection policy.
+    public func validatedStreamRequest(
+        _ request: CaptureStreamRequest
+    ) throws(CaptureDriverError) -> CaptureStreamRequest {
+        _ = try validatedConfiguration(request.configuration)
+
+        let descriptor: CaptureStreamDescriptor
+        if let streamID = request.streamID {
+            guard let requested = streams.first(where: {
+                $0.streamID == streamID
+            }),
+            requested.formatIDs.contains(request.configuration.formatID) else {
+                throw .unsupportedStreamCombination(
+                    deviceID: deviceID,
+                    streamIDs: [streamID]
+                )
+            }
+            descriptor = requested
+        } else {
+            guard let preferred = streams.first(where: {
+                $0.formatIDs.contains(request.configuration.formatID)
+            }) else {
+                throw .unsupportedStreamCombination(
+                    deviceID: deviceID,
+                    streamIDs: []
+                )
+            }
+            descriptor = preferred
+        }
+
+        try validate(
+            request.videoConnectionConfiguration,
+            for: descriptor
+        )
         return request
     }
 
@@ -176,5 +217,60 @@ extension CaptureDeviceCapabilities {
         _ controlID: CaptureDeviceControlID
     ) -> CaptureDriverError {
         .unsupportedControlValue(deviceID: deviceID, controlID: controlID)
+    }
+
+    private func validate(
+        _ configuration: CaptureVideoConnectionConfiguration,
+        for stream: CaptureStreamDescriptor
+    ) throws(CaptureDriverError) {
+        guard let capabilities = stream.videoConnectionCapabilities else {
+            if let orientation = configuration.orientation {
+                throw .unsupportedVideoOrientation(
+                    deviceID: deviceID,
+                    streamID: stream.streamID,
+                    orientation: orientation
+                )
+            }
+            if let mode = configuration.stabilizationMode {
+                throw .unsupportedVideoStabilizationMode(
+                    deviceID: deviceID,
+                    streamID: stream.streamID,
+                    mode: mode
+                )
+            }
+            if let mode = configuration.mirroringMode {
+                throw .unsupportedVideoMirroringMode(
+                    deviceID: deviceID,
+                    streamID: stream.streamID,
+                    mode: mode
+                )
+            }
+            return
+        }
+
+        if let orientation = configuration.orientation,
+           !capabilities.supportedOrientations.contains(orientation) {
+            throw .unsupportedVideoOrientation(
+                deviceID: deviceID,
+                streamID: stream.streamID,
+                orientation: orientation
+            )
+        }
+        if let mode = configuration.stabilizationMode,
+           !capabilities.supportedStabilizationModes.contains(mode) {
+            throw .unsupportedVideoStabilizationMode(
+                deviceID: deviceID,
+                streamID: stream.streamID,
+                mode: mode
+            )
+        }
+        if let mode = configuration.mirroringMode,
+           !capabilities.supportedMirroringModes.contains(mode) {
+            throw .unsupportedVideoMirroringMode(
+                deviceID: deviceID,
+                streamID: stream.streamID,
+                mode: mode
+            )
+        }
     }
 }

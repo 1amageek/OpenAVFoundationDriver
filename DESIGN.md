@@ -310,6 +310,31 @@ suite independently rejects duplicate observed members before comparing
 membership. Large dynamic data sets and media payloads are outside this decision
 and retain their own performance-specific storage contracts.
 
+### Runtime stream events
+
+A provider advertises runtime event support per `CaptureStreamDescriptor`.
+Streams that advertise any event family conform to
+`CaptureStreamEventSource`, install a `CaptureStreamEventSink` before start,
+and emit ordered interruption, resume, source-drop, pressure, and terminal
+failure values without holding a provider state lock. A terminal failure is the
+last event. Shutdown clears the sink and establishes that no later event can be
+delivered.
+
+Source-drop events are metadata only. They carry the source presentation time,
+cumulative count, and a typed reason; they never create or copy a media buffer.
+These events are distinct from a framework output dropping an already-delivered
+sample because of downstream backpressure.
+
+### Video connection policy
+
+`CaptureStreamRequest` carries an explicit
+`CaptureVideoConnectionConfiguration` for orientation, stabilization, and
+mirroring. The selected stream descriptor publishes supported values. Shared
+capability validation rejects each unsupported field with a specific
+`CaptureDriverError`, so a concrete provider cannot silently ignore a requested
+connection policy. A request with every field unset preserves the provider's
+current connection policy.
+
 Every concrete provider package implements the same `CaptureDeviceProvider`
 boundary. Providers with concurrent endpoints additionally conform their opened
 handle to `CaptureMultiStreamDeviceHandle`. Browser, replay, V4L2, GStreamer, and

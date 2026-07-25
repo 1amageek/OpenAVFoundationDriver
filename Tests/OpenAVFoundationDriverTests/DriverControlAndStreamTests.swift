@@ -1,5 +1,6 @@
 import OpenAVFoundationDriver
 import OpenAVFoundationDriverTesting
+import Synchronization
 import Testing
 
 @Test("Typed camera controls validate configuration against capabilities")
@@ -291,6 +292,134 @@ func providerConformanceValidationContracts() throws {
     }
 }
 
+@Test("Video connection policy validates against the selected stream")
+func videoConnectionContracts() throws {
+    let driverID = try CaptureDriverID("connection-test")
+    let deviceID = try CaptureDeviceID(
+        driverID: driverID,
+        localID: "camera"
+    )
+    let formatID = try CaptureDeviceFormatID("video")
+    let streamID = try CaptureStreamID("main")
+    let format = CaptureDeviceFormatDescriptor(
+        formatID: formatID,
+        mediaType: .video,
+        mediaSubtype: CaptureMediaSubtype(rawValue: 0)
+    )
+    let connectionCapabilities = try CaptureVideoConnectionCapabilities(
+        supportedOrientations: [.portrait, .landscapeRight],
+        supportedStabilizationModes: [.off, .standard],
+        supportedMirroringModes: [.automatic, .disabled]
+    )
+    let stream = try CaptureStreamDescriptor(
+        streamID: streamID,
+        mediaType: .video,
+        formatIDs: [formatID],
+        eventCapabilities: [
+            .interruptions,
+            .sourceDrops,
+            .systemPressure,
+            .terminalFailures
+        ],
+        videoConnectionCapabilities: connectionCapabilities
+    )
+    let capabilities = try CaptureDeviceCapabilities(
+        deviceID: deviceID,
+        revision: 1,
+        formats: [format],
+        preferredFormatID: formatID,
+        supportsConcurrentStreams: false,
+        streams: [stream],
+        supportedStreamCombinations: [
+            try CaptureStreamCombination(streamIDs: [streamID])
+        ]
+    )
+    let configuration = try CaptureDeviceConfiguration(
+        deviceID: deviceID,
+        capabilityRevision: 1,
+        formatID: formatID
+    )
+    let supported = CaptureStreamRequest(
+        streamID: streamID,
+        configuration: configuration,
+        videoConnectionConfiguration: CaptureVideoConnectionConfiguration(
+            orientation: .portrait,
+            stabilizationMode: .standard,
+            mirroringMode: .automatic
+        )
+    )
+
+    #expect(try capabilities.validatedStreamRequest(supported) == supported)
+    #expect(
+        stream.eventCapabilities == [
+            .interruptions,
+            .sourceDrops,
+            .systemPressure,
+            .terminalFailures
+        ]
+    )
+
+    let unsupported = CaptureStreamRequest(
+        streamID: streamID,
+        configuration: configuration,
+        videoConnectionConfiguration: CaptureVideoConnectionConfiguration(
+            orientation: .portraitUpsideDown
+        )
+    )
+    do {
+        _ = try capabilities.validatedStreamRequest(unsupported)
+        Issue.record("An unsupported orientation must remain a typed failure")
+    } catch {
+        #expect(
+            error == .unsupportedVideoOrientation(
+                deviceID: deviceID,
+                streamID: streamID,
+                orientation: .portraitUpsideDown
+            )
+        )
+    }
+}
+
+@Test("Video connection capabilities reject duplicate values")
+func duplicateVideoConnectionCapabilitiesFail() throws {
+    do {
+        _ = try CaptureVideoConnectionCapabilities(
+            supportedOrientations: [.portrait, .portrait]
+        )
+        Issue.record("Duplicate orientations must fail")
+    } catch {
+        #expect(error == .duplicateVideoOrientation)
+    }
+}
+
+@Test("Stream events preserve typed source state without media copies")
+func streamEventContracts() throws {
+    let recorder = CaptureStreamEventRecorder()
+    let pressure = CaptureSystemPressure(
+        level: .serious,
+        factors: [.systemTemperature, .peakPower]
+    )
+    let dropped = CaptureStreamDropEvent(
+        presentationTimeStamp: CMTime(value: 3, timescale: 30),
+        cumulativeCount: 4,
+        reason: .outOfBuffers
+    )
+
+    #expect(recorder.offer(.interrupted(.deviceInUseByAnotherClient))
+        == .continueStreaming)
+    #expect(recorder.offer(.pressure(pressure)) == .continueStreaming)
+    #expect(recorder.offer(.dropped(dropped)) == .continueStreaming)
+    #expect(recorder.offer(.resumed) == .continueStreaming)
+    #expect(
+        recorder.events == [
+            .interrupted(.deviceInUseByAnotherClient),
+            .pressure(pressure),
+            .dropped(dropped),
+            .resumed
+        ]
+    )
+}
+
 private struct ControlFixture {
     let deviceID: CaptureDeviceID
     let formatID: CaptureDeviceFormatID
@@ -376,6 +505,26 @@ private struct ControlFixture {
             supportsConcurrentStreams: false,
             controls: controls
         )
+    }
+}
+
+private final class CaptureStreamEventRecorder:
+    CaptureStreamEventSink,
+    Sendable
+{
+    private let storage = Mutex<[CaptureStreamEvent]>([])
+
+    var events: [CaptureStreamEvent] {
+        storage.withLock { events in events }
+    }
+
+    func offer(
+        _ event: CaptureStreamEvent
+    ) -> CaptureStreamEventDisposition {
+        storage.withLock { events in
+            events.append(event)
+        }
+        return .continueStreaming
     }
 }
 
