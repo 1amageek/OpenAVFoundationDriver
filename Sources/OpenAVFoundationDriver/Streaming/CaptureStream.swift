@@ -3,6 +3,15 @@ public protocol CaptureStream:
     CapturePlatformConcurrencyContract
 {
     var deviceID: CaptureDeviceID { get }
+    var eventCapabilities: CaptureStreamEventCapabilities { get }
+
+    /// Installs or clears the event sink while the stream is stopped.
+    ///
+    /// Implementations that advertise event capabilities must retain the sink
+    /// until shutdown and invoke it only outside provider state locks.
+    func setEventSink(
+        _ sink: (any CaptureStreamEventSink)?
+    ) throws(CaptureDriverError)
 
 #if hasFeature(Embedded)
     func start() throws(CaptureDriverError)
@@ -16,4 +25,18 @@ public protocol CaptureStream:
 #else
     func shutdown() async throws(CaptureDriverError)
 #endif
+}
+
+public extension CaptureStream {
+    var eventCapabilities: CaptureStreamEventCapabilities {
+        []
+    }
+
+    func setEventSink(
+        _ sink: (any CaptureStreamEventSink)?
+    ) throws(CaptureDriverError) {
+        guard sink == nil else {
+            throw .unsupportedStreamEvents(deviceID)
+        }
+    }
 }

@@ -1,11 +1,5 @@
-public protocol CaptureStreamEventSource: CaptureStream {
-    var eventCapabilities: CaptureStreamEventCapabilities { get }
-
-    /// Installs or clears the event sink while the stream is stopped.
-    ///
-    /// A provider that cannot replace the sink in its current state throws a
-    /// typed driver error. Shutdown clears the sink and prevents later events.
-    func setEventSink(
-        _ sink: (any CaptureStreamEventSink)?
-    ) throws(CaptureDriverError)
-}
+/// A marker for streams that override the base event capability and sink APIs.
+///
+/// Consumers do not need a runtime cast: Embedded Swift can call the base
+/// `CaptureStream` requirements directly without protocol-conformance metadata.
+public protocol CaptureStreamEventSource: CaptureStream {}

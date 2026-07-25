@@ -39,6 +39,19 @@ typed and no concrete provider may be installed by the production target.
   drivers still perform discovery, configuration, delivery, and shutdown, and
   propagate the same typed driver failures.
 
+### Shared-state review matrix
+
+| Logical state | Native storage / isolation | WASM storage / isolation | Embedded storage / isolation | Read entry point | Mutation entry point | Shutdown / release |
+|---|---|---|---|---|---|---|
+| Device events recorded by the testing product | `Mutex<[CaptureDeviceEvent]>` | `Mutex<[CaptureDeviceEvent]>` | `Mutex<[CaptureDeviceEvent]>` | `events`, `receivedInitialSnapshot` | `offer(_:)` | Recorder owns no source; the subscription owns shutdown |
+| Sample identity counters | `Mutex<State>` | `Mutex<State>` | `Mutex<State>` | `receivedSampleCount`, `receivedExpectedSample` | `offer(_:)` | Sink owns no stream; the stream owns shutdown |
+| Runtime stream events recorded by the testing product | `Mutex<[CaptureStreamEvent]>` | `Mutex<[CaptureStreamEvent]>` | `Mutex<[CaptureStreamEvent]>` | `events` | `offer(_:)` | Recorder owns no stream; the stream clears its sink on shutdown |
+
+All three targets use the same storage owner, synchronization primitive, and
+entry points. The `hasFeature(Embedded)` branches in this package alter only the
+suspension shape of I/O/lifecycle protocol requirements; they do not alter
+shared-state isolation or `Sendable` contracts.
+
 ## Required implementation
 
 - [x] Validated driver-namespaced identity values
@@ -95,13 +108,15 @@ regular WASM SDK's runtime `Set.insert` trap without adding a target-specific
 branch.
 
 Stream descriptors now declare the exact runtime event families and video
-connection policies that a provider supports. Event-capable streams refine
-`CaptureStream` through `CaptureStreamEventSource`; providers that do not
-implement this refinement cannot claim event capability. Event sinks receive
-ordered typed values outside provider locks, and stream shutdown must clear the
-sink before returning. Video orientation, stabilization, and mirroring remain
-part of the stream request and fail with field-specific typed errors when the
-selected stream does not advertise the requested value.
+connection policies that a provider supports. The base `CaptureStream`
+contract exposes event capability and sink installation without an Embedded
+runtime cast. Its shared default advertises no capability and rejects a non-nil
+sink with a typed failure, so a provider cannot silently claim event support.
+Event sinks receive ordered typed values outside provider locks, and stream
+shutdown must clear the sink before returning. Video orientation,
+stabilization, and mirroring remain part of the stream request and fail with
+field-specific typed errors when the selected stream does not advertise the
+requested value.
 
 ## Test evidence
 
@@ -112,10 +127,10 @@ selected stream does not advertise the requested value.
   -only-testing:OpenAVFoundationDriverTests
   SWIFT_EXEC=~/Library/Developer/Toolchains/
   swift-6.4.x-DEVELOPMENT-SNAPSHOT-2026-07-17-a.xctoolchain/usr/bin/swiftc`
-  — passed 14 behavior tests with the Swift 6.4 development snapshot compiler on
+  — passed 15 behavior tests with the Swift 6.4 development snapshot compiler on
   2026-07-25 against OpenCoreMedia `07bd447` and OpenCoreVideo `2d528af`.
 - Native Thread Sanitizer:
-  the same 14 behavior tests passed with `-enableThreadSanitizer YES` and the
+  the same 15 behavior tests passed with `-enableThreadSanitizer YES` and the
   fixed Swift 6.4 development snapshot on 2026-07-25.
 - WASM:
   `~/Library/Developer/Toolchains/

@@ -54,6 +54,7 @@ public enum CaptureDriverError: Error, Sendable, Equatable {
         streamID: CaptureStreamID,
         mode: CaptureVideoMirroringMode
     )
+    case unsupportedStreamEvents(CaptureDeviceID)
     case bufferExhausted(CaptureDeviceID)
     case backendFailure(
         driverID: CaptureDriverID,

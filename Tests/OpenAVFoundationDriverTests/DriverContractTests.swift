@@ -409,6 +409,32 @@ func providerContracts() async throws {
     }
 }
 
+@Test("Base streams reject unsupported runtime event sinks")
+func baseStreamEventContract() throws {
+    let fixture = try DriverFixture()
+    let stream: any CaptureStream = TestCaptureStream(
+        deviceID: fixture.descriptor.deviceID,
+        sampleBuffer: fixture.sampleBuffer,
+        sink: TestCaptureSampleSink()
+    )
+    let recorder = CaptureStreamEventRecorder()
+
+    #expect(stream.eventCapabilities.isEmpty)
+
+    do {
+        try stream.setEventSink(recorder)
+        Issue.record("A base stream must reject a non-nil event sink")
+    } catch {
+        #expect(
+            error == .unsupportedStreamEvents(
+                fixture.descriptor.deviceID
+            )
+        )
+    }
+
+    try stream.setEventSink(nil)
+}
+
 private struct DriverFixture: Sendable {
     let descriptor: CaptureDeviceDescriptor
     let capabilities: CaptureDeviceCapabilities

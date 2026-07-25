@@ -313,11 +313,15 @@ and retain their own performance-specific storage contracts.
 ### Runtime stream events
 
 A provider advertises runtime event support per `CaptureStreamDescriptor`.
-Streams that advertise any event family conform to
-`CaptureStreamEventSource`, install a `CaptureStreamEventSink` before start,
-and emit ordered interruption, resume, source-drop, pressure, and terminal
-failure values without holding a provider state lock. A terminal failure is the
-last event. Shutdown clears the sink and establishes that no later event can be
+Every `CaptureStream` exposes its event capabilities and typed sink
+installation directly, so Embedded consumers do not require a runtime protocol
+cast. The shared default advertises no capabilities and rejects every non-nil
+sink with `unsupportedStreamEvents`; it never silently accepts an unsupported
+sink. Event-capable streams may additionally use the
+`CaptureStreamEventSource` marker, override both base requirements, and emit
+ordered interruption, resume, source-drop, pressure, and terminal failure
+values without holding a provider state lock. A terminal failure is the last
+event. Shutdown clears the sink and establishes that no later event can be
 delivered.
 
 Source-drop events are metadata only. They carry the source presentation time,
