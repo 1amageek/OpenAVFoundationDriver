@@ -1,4 +1,5 @@
 import OpenAVFoundationDriver
+import OpenAVFoundationDriverTesting
 import Synchronization
 import Testing
 
@@ -281,20 +282,36 @@ func providerContracts() async throws {
         try await provider.requestAccess(for: .audio) == .denied
     )
 
-    let devices = try await provider.devices(
-        matching: CaptureDiscoveryRequest(
-            deviceTypeSelection: try CaptureDeviceTypeSelection(
-                matching: [fixture.descriptor.deviceTypeID]
-            ),
-            mediaType: .video,
-            position: .external
-        )
+    let discoveryRequest = CaptureDiscoveryRequest(
+        deviceTypeSelection: try CaptureDeviceTypeSelection(
+            matching: [fixture.descriptor.deviceTypeID]
+        ),
+        mediaType: .video,
+        position: .external
+    )
+    let devices = try await CaptureProviderConformanceSuite.discoveredDevices(
+        from: provider,
+        matching: discoveryRequest
     )
     #expect(devices == [fixture.descriptor])
 
-    let handle = try await provider.deviceHandle(
-        for: fixture.descriptor.deviceID
+    let eventRecorder = CaptureDeviceEventRecorder()
+    try await CaptureProviderConformanceSuite.exerciseDeviceEventLifecycle(
+        from: fixture.provider,
+        matching: discoveryRequest,
+        sink: eventRecorder
     )
+    try CaptureProviderConformanceSuite.validateInitialSnapshot(
+        in: eventRecorder,
+        driverID: fixture.provider.driverID
+    )
+    #expect(eventRecorder.events == [.snapshot([fixture.descriptor])])
+
+    let openResult = try await CaptureProviderConformanceSuite.openedDevice(
+        from: provider,
+        descriptor: fixture.descriptor
+    )
+    let handle = openResult.handle
     let snapshot = try await handle.snapshot()
     #expect(snapshot.descriptor == fixture.descriptor)
     #expect(snapshot.capabilities == fixture.capabilities)
@@ -305,10 +322,26 @@ func providerContracts() async throws {
         formatID: fixture.capabilities.formats[0].formatID,
         frameRate: 30
     )
-    #expect(try await handle.configure(configuration) == snapshot)
+    #expect(
+        try await CaptureProviderConformanceSuite.configuredSnapshot(
+            from: handle,
+            configuration: configuration
+        ) == snapshot
+    )
     #expect(
         await fixture.provider.handle.currentConfiguration() == configuration
     )
+
+    let identitySink = CaptureSampleIdentitySink(
+        expectedSample: fixture.sampleBuffer
+    )
+    try await CaptureProviderConformanceSuite.exerciseStreamLifecycle(
+        on: handle,
+        request: CaptureStreamRequest(configuration: configuration),
+        sink: identitySink
+    )
+    #expect(identitySink.receivedSampleCount == 1)
+    #expect(identitySink.receivedExpectedSample)
 
     let sink = TestCaptureSampleSink()
     let stream = try await handle.stream(
@@ -361,8 +394,10 @@ func providerContracts() async throws {
         )
     }
 
-    try await handle.shutdown()
-    try await handle.shutdown()
+    try await CaptureProviderConformanceSuite.exerciseHandleShutdown(
+        handle,
+        deviceID: fixture.descriptor.deviceID
+    )
 
     do {
         _ = try await handle.snapshot()
@@ -455,7 +490,10 @@ private struct DriverFixture: Sendable {
     }
 }
 
-private struct TestCaptureDeviceProvider: CaptureDeviceProvider {
+private struct TestCaptureDeviceProvider:
+    CaptureDeviceProvider,
+    CaptureDeviceEventProvider
+{
     let driverID: CaptureDriverID
     let descriptor: CaptureDeviceDescriptor
     let handle: TestCaptureDeviceHandle
@@ -496,6 +534,74 @@ private struct TestCaptureDeviceProvider: CaptureDeviceProvider {
             throw .deviceNotFound(deviceID)
         }
         return handle
+    }
+
+    func deviceEventSubscription(
+        matching request: CaptureDiscoveryRequest,
+        sink: any CaptureDeviceEventSink
+    ) async throws(CaptureDriverError)
+        -> any CaptureDeviceEventSubscription
+    {
+        TestCaptureDeviceEventSubscription(
+            driverID: driverID,
+            descriptor: descriptor,
+            request: request,
+            sink: sink
+        )
+    }
+}
+
+private actor TestCaptureDeviceEventSubscription:
+    CaptureDeviceEventSubscription
+{
+    nonisolated let driverID: CaptureDriverID
+
+    private let descriptor: CaptureDeviceDescriptor
+    private let request: CaptureDiscoveryRequest
+    private let sink: any CaptureDeviceEventSink
+    private var isStarted = false
+    private var isShutdown = false
+
+    init(
+        driverID: CaptureDriverID,
+        descriptor: CaptureDeviceDescriptor,
+        request: CaptureDiscoveryRequest,
+        sink: any CaptureDeviceEventSink
+    ) {
+        self.driverID = driverID
+        self.descriptor = descriptor
+        self.request = request
+        self.sink = sink
+    }
+
+    func start() throws(CaptureDriverError) {
+        guard !isShutdown else {
+            throw .providerUnavailable(driverID: driverID)
+        }
+        guard !isStarted else {
+            return
+        }
+
+        let matchesMediaType = request.mediaType.map {
+            descriptor.mediaTypes.contains($0)
+        } ?? true
+        let matchesPosition = request.position == .unspecified
+            || request.position == descriptor.position
+        let matchesDeviceType = request.deviceTypeSelection.includes(
+            descriptor.deviceTypeID
+        )
+        let descriptors = matchesMediaType
+            && matchesPosition
+            && matchesDeviceType ? [descriptor] : []
+        if sink.offer(.snapshot(descriptors)) == .stop {
+            isShutdown = true
+            return
+        }
+        isStarted = true
+    }
+
+    func shutdown() {
+        isShutdown = true
     }
 }
 

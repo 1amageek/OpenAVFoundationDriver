@@ -11,6 +11,10 @@ let package = Package(
         .library(
             name: "OpenAVFoundationDriver",
             targets: ["OpenAVFoundationDriver"]
+        ),
+        .library(
+            name: "OpenAVFoundationDriverTesting",
+            targets: ["OpenAVFoundationDriverTesting"]
         )
     ],
     dependencies: [
@@ -31,9 +35,16 @@ let package = Package(
                 "OpenCoreVideo"
             ]
         ),
+        .target(
+            name: "OpenAVFoundationDriverTesting",
+            dependencies: ["OpenAVFoundationDriver"]
+        ),
         .testTarget(
             name: "OpenAVFoundationDriverTests",
-            dependencies: ["OpenAVFoundationDriver"]
+            dependencies: [
+                "OpenAVFoundationDriver",
+                "OpenAVFoundationDriverTesting"
+            ]
         )
     ],
     swiftLanguageModes: [.v6]

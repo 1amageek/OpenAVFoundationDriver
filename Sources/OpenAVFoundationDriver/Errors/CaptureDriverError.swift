@@ -27,6 +27,18 @@ public enum CaptureDriverError: Error, Sendable, Equatable {
         frameRate: Double
     )
     case unsupportedConfiguration(CaptureDeviceID)
+    case unsupportedControl(
+        deviceID: CaptureDeviceID,
+        controlID: CaptureDeviceControlID
+    )
+    case unsupportedControlValue(
+        deviceID: CaptureDeviceID,
+        controlID: CaptureDeviceControlID
+    )
+    case unsupportedStreamCombination(
+        deviceID: CaptureDeviceID,
+        streamIDs: [CaptureStreamID]
+    )
     case bufferExhausted(CaptureDeviceID)
     case backendFailure(
         driverID: CaptureDriverID,

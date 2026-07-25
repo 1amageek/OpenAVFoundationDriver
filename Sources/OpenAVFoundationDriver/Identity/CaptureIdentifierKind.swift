@@ -4,4 +4,6 @@ public enum CaptureIdentifierKind: Sendable, Equatable {
     case deviceType
     case mediaType
     case format
+    case control
+    case stream
 }

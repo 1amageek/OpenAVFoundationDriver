@@ -23,4 +23,46 @@ public enum CaptureContractError: Error, Sendable, Equatable {
         descriptorRevision: UInt64,
         capabilitiesRevision: UInt64
     )
+    case invalidScalarRange(
+        minimum: Double,
+        maximum: Double
+    )
+    case invalidNormalizedPoint(x: Double, y: Double)
+    case missingControlModes(CaptureDeviceControlID)
+    case duplicateControlMode(CaptureDeviceControlID)
+    case invalidControlConfiguration(CaptureDeviceControlID)
+    case duplicateDeviceControlID(CaptureDeviceControlID)
+    case missingDeviceControlOptions(CaptureDeviceControlID)
+    case duplicateDeviceControlOption(
+        controlID: CaptureDeviceControlID,
+        option: String
+    )
+    case duplicateDeviceControlSetting(CaptureDeviceControlID)
+    case missingStreamFormatIDs(CaptureStreamID)
+    case duplicateStreamFormatID(
+        streamID: CaptureStreamID,
+        formatID: CaptureDeviceFormatID
+    )
+    case duplicateStreamID(CaptureStreamID)
+    case missingStreamCombinations(CaptureDeviceID)
+    case duplicateStreamCombination
+    case concurrentStreamSupportMismatch(CaptureDeviceID)
+    case streamFormatNotFound(
+        streamID: CaptureStreamID,
+        formatID: CaptureDeviceFormatID
+    )
+    case streamNotFound(
+        deviceID: CaptureDeviceID,
+        streamID: CaptureStreamID
+    )
+    case missingConcurrentStreamRequests
+    case streamRequestDeviceMismatch(
+        expected: CaptureDeviceID,
+        actual: CaptureDeviceID
+    )
+    case streamRequestRevisionMismatch(
+        expected: UInt64,
+        actual: UInt64
+    )
+    case streamRequestControlMismatch(CaptureDeviceID)
 }

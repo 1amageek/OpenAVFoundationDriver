@@ -6,9 +6,11 @@ This document is the normative design for the package. The first implementation
 slice now provides validated identity, discovery, authorization, format
 capability, capability-snapshot, typed-error, provider, and opened-handle
 contracts. Revision-bound configuration and zero-copy sample-stream contracts
-are also implemented. It does not provide a concrete provider, registry, capture
-session, or hardware adapter. Contract tests are not evidence of hardware
-capture support.
+are also implemented. Typed camera controls, capability-revision-bound
+multi-stream negotiation, and a separately consumable provider conformance
+product complete the shared driver boundary. It does not provide a concrete
+provider, registry, capture session, or hardware adapter. Contract tests are not
+evidence of hardware capture support.
 
 ## Implementation status
 
@@ -21,9 +23,14 @@ capture support.
 | Explicit provider-preferred format selection | Implemented |
 | Typed contract and driver errors | Implemented |
 | Provider discovery and open protocol | Implemented |
+| Device topology event and subscription protocol | Implemented |
 | Opened-device capability and shutdown protocol | Implemented |
 | Revision-bound format and frame-rate configuration | Implemented |
+| Focus, exposure, white-balance, and zoom contracts | Implemented |
+| Namespaced device-specific control contracts | Implemented |
+| Multi-stream capability and atomic group contracts | Implemented |
 | Zero-copy sample streaming contract | Implemented |
+| Separate provider conformance testing product | Implemented |
 | Concrete providers and registry | Outside this package |
 
 ## Purpose
@@ -51,10 +58,14 @@ OpenAVFoundationDriver owns:
 - driver, device, media-type, and format identifiers;
 - immutable device descriptors and capability revisions;
 - discovery request values;
+- typed device topology events, sinks, and subscriptions;
 - device open and configuration request values;
 - stream request and delivery disposition values;
+- standard and device-specific control capability and setting values;
+- stream endpoint, supported-combination, sink-binding, and group values;
 - typed driver errors;
-- provider, opened-device, stream, and sample-sink protocols;
+- provider, opened-device, multi-stream handle, stream-group, stream, and
+  sample-sink protocols;
 - explicit shutdown contracts for opened resources.
 
 OpenAVFoundationDriver does not own:
@@ -109,6 +120,13 @@ A descriptor is an immutable value. Discovery returns descriptors and never open
 hardware. A device ID is semantically the combination of a driver namespace and a
 stable driver-local identifier.
 
+Providers that support hot-plug observation refine `CaptureDeviceProvider` as
+`CaptureDeviceEventProvider`. Starting a subscription emits exactly one
+authoritative `.snapshot` before `.connected`, `.updated`, or `.disconnected`
+deltas. This removes the discovery-to-notification race without polling. Event
+sinks either accept an event or request subscription stop; topology deltas are
+never silently dropped.
+
 `CaptureDeviceTypeSelection.all` explicitly requests every device type.
 `CaptureDeviceTypeSelection(matching:)` requires at least one unique device type.
 Providers use `includes(_:)` rather than assigning their own meaning to an empty
@@ -152,6 +170,17 @@ Capabilities identify one preferred format explicitly. The framework may use
 without treating array order as an undocumented fallback. The preferred format
 must exist in the same validated capability snapshot.
 
+Standard control capabilities preserve Apple's query-before-setting model for
+focus, exposure, white balance, and zoom. Manual lens position uses the normalized
+`0...1` range. Exposure duration uses `CMTime`; an omitted duration or ISO means
+the backend should preserve its current value. Point-of-interest coordinates are
+normalized values independent of CoreGraphics.
+
+Vendor and transport controls use `CaptureDeviceControlID` plus a constrained
+small value. This extension mechanism is for configuration metadata only. It
+must not carry frames, encoded payloads, native pointers, or backend objects.
+Reserved standard IDs cannot be redefined as device-specific controls.
+
 ### Streaming
 
 The third group contains:
@@ -174,6 +203,18 @@ These streaming declarations use OpenCoreMedia's reviewed `CMSampleBuffer`
 ownership surface. The driver package does not introduce a competing sample
 type.
 
+`CaptureDeviceCapabilities.streams` names provider-defined endpoints and
+`supportedStreamCombinations` lists the exact sets that may run concurrently.
+`CaptureStreamGroupRequest` requires multiple unique endpoint IDs from one
+device and one capability revision. `validatedStreamGroupRequest` verifies every
+format, supported combination, and one-to-one sink binding before a
+`CaptureMultiStreamDeviceHandle` creates an atomic `CaptureStreamGroup`.
+
+The legacy `supportsConcurrentStreams` Boolean remains deprecated for source
+compatibility. The supported-combination list is authoritative and the
+initializer rejects disagreement between the two representations. Remove the
+Boolean in the next source-breaking release after downstream providers migrate.
+
 ### Shutdown
 
 Opened handles and streams expose explicit shutdown. Shutdown is idempotent at the
@@ -181,6 +222,14 @@ framework boundary, releases every retained lease, finishes delivery, and
 propagates backend failure. Deinitialization is not the primary shutdown path.
 Contract tests call shutdown repeatedly and require subsequent resource access to
 fail explicitly.
+
+Stream groups have the same explicit, idempotent shutdown contract. Group start
+is atomic from the framework's perspective: a provider must either start the
+negotiated set or fail without reporting a partially successful group.
+
+Device event subscriptions also require explicit idempotent shutdown. Providers
+remove native notification observers or host callbacks during shutdown and must
+not emit after shutdown completes.
 
 ## Ownership
 
@@ -245,6 +294,27 @@ OpenCoreVideo.
 Dynamic plugin loading is not required. Embedded firmware can construct a fixed
 provider set at startup.
 
+Every concrete provider package implements the same `CaptureDeviceProvider`
+boundary. Providers with concurrent endpoints additionally conform their opened
+handle to `CaptureMultiStreamDeviceHandle`. Browser, replay, V4L2, GStreamer, and
+Argus details remain in their provider packages; no backend-specific condition
+or payload type enters this module.
+
+## Provider conformance product
+
+`OpenAVFoundationDriverTesting` is a separate library product for provider test
+targets. `CaptureProviderConformanceSuite` checks discovery namespace and filter
+behavior, opened snapshot identity, shared configuration validation, zero-copy
+stream lifecycle, atomic multi-stream group lifecycle, device-event initial
+snapshot delivery, repeated stream, group, subscription, and handle shutdown,
+and typed error propagation.
+`CaptureSampleIdentitySink` lets deterministic replay providers prove that the
+same `CMSampleBuffer` object crosses the sink boundary.
+`CaptureDeviceEventRecorder` verifies event order and content.
+
+The testing product does not install a provider and is not linked by the runtime
+product unless a client explicitly depends on it.
+
 ## Error contract
 
 The typed error surface distinguishes:
@@ -290,10 +360,17 @@ Each file contains one primary public type where practical.
 5. Implement the opened-device lifecycle protocol. **Capability access and
    shutdown complete; revision-bound configuration complete.**
 6. After `CMSampleBuffer` exists, implement stream request, sink, stream, and
-   delivery disposition contracts.
-7. Implement a separate replay driver package for behavioral contract tests.
-8. Validate native, WASM, and Embedded builds and integrate with
-   OpenAVFoundation discovery.
+   delivery disposition contracts. **Complete.**
+7. Implement standard and namespaced device-specific controls. **Complete.**
+8. Implement explicit multi-stream combinations and atomic group contracts.
+   **Complete.**
+9. Publish provider conformance helpers as a separate testing product.
+   **Complete.**
+10. Implement typed hot-plug observation with explicit shutdown. **Complete.**
+11. Implement concrete replay, browser, V4L2, GStreamer, and Argus packages.
+    **Outside this package; the extension boundary is complete.**
+12. Validate native, WASM, and Embedded builds and integrate with
+    OpenAVFoundation discovery. **Shared package validation complete.**
 
 Declaration presence, import tests, or a replay-only path are not driver
 completion.

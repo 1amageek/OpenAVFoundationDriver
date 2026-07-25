@@ -8,11 +8,11 @@
 
 ## Smoke definition
 
-The package smoke path must execute discovery, device open, validated capability
-snapshot access, configuration, one zero-copy `CMSampleBuffer` delivery, stream
-shutdown, and device shutdown through protocol existentials. Expected failures
-must remain typed and no concrete provider may be installed by the production
-target.
+The package smoke path must execute discovery, initial device-event snapshot,
+subscription shutdown, device open, validated capability snapshot access,
+configuration, one zero-copy `CMSampleBuffer` delivery, stream shutdown, and
+device shutdown through protocol existentials. Expected failures must remain
+typed and no concrete provider may be installed by the production target.
 
 ## Zero-copy invariant
 
@@ -45,13 +45,26 @@ target.
 - [x] Validated driver-namespaced identity values
 - [x] Explicit all-or-matching discovery selection
 - [x] Authorization status and request contracts
+- [x] Typed hot-plug initial-snapshot and delta event contract
+- [x] Non-dropping event sink and idempotent subscription shutdown
 - [x] Validated descriptor and capability snapshots
 - [x] Explicit provider-preferred format and validated default configuration
 - [x] Provider and opened-handle lifecycle contracts
 - [x] Capability-revision-bound device configuration
 - [x] `CMSampleBuffer` stream request and sink contracts
+- [x] Focus, exposure, white-balance, and zoom capability contracts
+- [x] Standard control configurations validated against the same revision
+- [x] Namespaced, constrained device-specific control extension
+- [x] Explicit stream endpoints and supported concurrent combinations
+- [x] Atomic multi-stream handle and stream-group lifecycle contracts
+- [x] One-to-one multi-stream sink binding validation
 - [x] Explicit stream start and idempotent shutdown
 - [x] Existential behavior smoke covering one delivered sample
+- [x] Separate `OpenAVFoundationDriverTesting` product
+- [x] Reusable discovery/open/configure/lifecycle conformance suite
+- [x] Reusable atomic multi-stream group lifecycle conformance
+- [x] Reusable event recorder and subscription lifecycle conformance
+- [x] Reusable same-`CMSampleBuffer` identity sink
 - [x] Callable owner-isolated Embedded provider and lifecycle contracts
 - [x] Native `xcodebuild` behavior tests
 - [x] WASM build
@@ -59,39 +72,46 @@ target.
 
 ## Current work
 
-The configuration and streaming contract slice is implemented. The behavior
-smoke opens a device, validates and applies a revision-bound configuration,
-starts a stream, delivers the same sample-buffer object to the sink, shuts down
-the stream twice, and shuts down the device. Native behavior tests and clean
-WASM and Embedded WASM builds complete the first smoke slice.
+The shared provider boundary is implemented. A configuration now carries
+revision-bound standard and device-specific controls. Capabilities describe
+explicit stream endpoints and exact supported concurrent combinations. Group
+validation rejects mismatched devices, revisions, formats, combinations, and
+sink identities before provider allocation. The separately consumable testing
+product exercises discovery, open, configuration, zero-copy delivery, repeated
+stream, atomic stream-group, event-subscription, and handle shutdown, and typed
+failures.
 
 ## Test evidence
 
 - Native:
-  `xcodebuild test -scheme OpenAVFoundationDriver -destination 'platform=macOS'
+  `xcodebuild test -scheme OpenAVFoundationDriver-Package
+  -destination 'platform=macOS'
   -maximum-test-execution-time-allowance 30
   -only-testing:OpenAVFoundationDriverTests
-  SWIFT_EXEC=~/Library/Developer/Toolchains/swift-latest.xctoolchain/usr/bin/swiftc`
-  — passed 6 behavior tests with the Swift 6.4 development snapshot compiler on
+  SWIFT_EXEC=~/Library/Developer/Toolchains/
+  swift-6.4.x-DEVELOPMENT-SNAPSHOT-2026-07-17-a.xctoolchain/usr/bin/swiftc`
+  — passed 11 behavior tests with the Swift 6.4 development snapshot compiler on
   2026-07-25.
 - WASM:
   `~/Library/Developer/Toolchains/swift-latest.xctoolchain/usr/bin/swift build
   --swift-sdks-path ~/Library/org.swift.swiftpm/swift-sdks
   --swift-sdk swift-6.4.x-DEVELOPMENT-SNAPSHOT-2026-07-17-a_wasm
   --target OpenAVFoundationDriver`
-  — passed after `swift package clean` with the matching Swift 6.4 development
-  snapshot compiler and SDK on 2026-07-25.
+  and the same command with `--target OpenAVFoundationDriverTesting`
+  — both products passed with isolated scratch directories and the matching
+  Swift 6.4 development snapshot compiler and SDK on 2026-07-25.
 - Embedded WASM:
   `~/Library/Developer/Toolchains/swift-latest.xctoolchain/usr/bin/swift build
   --swift-sdks-path ~/Library/org.swift.swiftpm/swift-sdks
   --swift-sdk swift-6.4.x-DEVELOPMENT-SNAPSHOT-2026-07-17-a_wasm-embedded
   --target OpenAVFoundationDriver`
-  — passed after `swift package clean` with the matching Swift 6.4 development
-  snapshot compiler and SDK on 2026-07-25.
+  and the same command with `--target OpenAVFoundationDriverTesting`
+  — both products passed with isolated scratch directories and the matching
+  Swift 6.4 development snapshot compiler and SDK on 2026-07-25.
 
-## Deferred after smoke
+## Concrete provider work outside this package
 
-- Camera controls such as focus, exposure, white balance, and zoom
 - Concrete replay, browser, V4L2, GStreamer, and Argus providers
-- Multi-stream negotiation and device-specific controls
-- Provider conformance suite distributed as a separate testing product
+- Platform mappings for the implemented control and multi-stream contracts
+- Platform mappings for the implemented topology event contract
+- Runtime interruption and recovery events for already-open devices
