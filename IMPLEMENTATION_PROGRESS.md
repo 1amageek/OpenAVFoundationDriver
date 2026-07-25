@@ -28,14 +28,13 @@ typed and no concrete provider may be installed by the production target.
 
 ## Platform concurrency contract
 
-- Native Swift and WASM providers, opened handles, streams, and sinks are
-  `Sendable`; provider and lifecycle operations are asynchronous.
-- Embedded Swift uses the same semantic operations through synchronous,
-  owner-isolated protocol requirements. Its `CaptureSampleSink` inherits
-  `AnyObject` directly. The fixed Swift 6.4 development snapshot and matching
-  Embedded SDK compile the callable synchronous lifecycle path. Native Swift and
-  WASM keep the `Sendable` marker. An asynchronous Embedded existential path is
-  not part of the verified contract.
+- Providers, opened handles, streams, event sinks, and sample sinks are
+  `Sendable` on Native Swift, WASM, and Embedded Swift.
+- Embedded Swift uses synchronous forms of the same semantic operations. This
+  execution-shape difference does not imply single-threaded execution and does
+  not remove synchronization, ownership, or data-race safety requirements.
+- The fixed Swift 6.4 development snapshot and matching Embedded SDK compile the
+  callable synchronous lifecycle path with the same `Sendable` boundary.
 - The Embedded contract is not a fallback or simulated success path. Concrete
   drivers still perform discovery, configuration, delivery, and shutdown, and
   propagate the same typed driver failures.
@@ -65,7 +64,8 @@ typed and no concrete provider may be installed by the production target.
 - [x] Reusable atomic multi-stream group lifecycle conformance
 - [x] Reusable event recorder and subscription lifecycle conformance
 - [x] Reusable same-`CMSampleBuffer` identity sink
-- [x] Callable owner-isolated Embedded provider and lifecycle contracts
+- [x] Callable synchronous Embedded provider and lifecycle contracts
+- [x] Identical `Sendable` boundary across Native, WASM, and Embedded
 - [x] Native `xcodebuild` behavior tests
 - [x] WASM build
 - [x] Embedded WASM build
@@ -91,9 +91,13 @@ failures.
   SWIFT_EXEC=~/Library/Developer/Toolchains/
   swift-6.4.x-DEVELOPMENT-SNAPSHOT-2026-07-17-a.xctoolchain/usr/bin/swiftc`
   — passed 11 behavior tests with the Swift 6.4 development snapshot compiler on
-  2026-07-25.
+  2026-07-25 against OpenCoreMedia `07bd447` and OpenCoreVideo `29b4664`.
+- Native Thread Sanitizer:
+  the same 11 behavior tests passed with `-enableThreadSanitizer YES` and the
+  fixed Swift 6.4 development snapshot on 2026-07-25.
 - WASM:
-  `~/Library/Developer/Toolchains/swift-latest.xctoolchain/usr/bin/swift build
+  `~/Library/Developer/Toolchains/
+  swift-6.4.x-DEVELOPMENT-SNAPSHOT-2026-07-17-a.xctoolchain/usr/bin/swift build
   --swift-sdks-path ~/Library/org.swift.swiftpm/swift-sdks
   --swift-sdk swift-6.4.x-DEVELOPMENT-SNAPSHOT-2026-07-17-a_wasm
   --target OpenAVFoundationDriver`
@@ -101,13 +105,20 @@ failures.
   — both products passed with isolated scratch directories and the matching
   Swift 6.4 development snapshot compiler and SDK on 2026-07-25.
 - Embedded WASM:
-  `~/Library/Developer/Toolchains/swift-latest.xctoolchain/usr/bin/swift build
+  `~/Library/Developer/Toolchains/
+  swift-6.4.x-DEVELOPMENT-SNAPSHOT-2026-07-17-a.xctoolchain/usr/bin/swift build
   --swift-sdks-path ~/Library/org.swift.swiftpm/swift-sdks
   --swift-sdk swift-6.4.x-DEVELOPMENT-SNAPSHOT-2026-07-17-a_wasm-embedded
   --target OpenAVFoundationDriver`
   and the same command with `--target OpenAVFoundationDriverTesting`
   — both products passed with isolated scratch directories and the matching
   Swift 6.4 development snapshot compiler and SDK on 2026-07-25.
+- Embedded callable lifecycle:
+  a temporary external WASI executable exercised discovery, the initial topology
+  snapshot, open, configuration, one same-identity `CMSampleBuffer` delivery,
+  stream shutdown, and handle shutdown through protocol existentials, then
+  exited successfully under Node 24 on 2026-07-25. The executable resolved
+  OpenCoreMedia `07bd447` and OpenCoreVideo `29b4664`.
 
 ## Concrete provider work outside this package
 

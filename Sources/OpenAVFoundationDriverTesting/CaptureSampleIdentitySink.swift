@@ -7,10 +7,10 @@ public final class CaptureSampleIdentitySink: CaptureSampleSink {
         var receivedExpectedSample = false
     }
 
-    private let expectedSample: any CMSampleBuffer
+    private let expectedSample: any CMSampleBuffer & Sendable
     private let state = Mutex(State())
 
-    public init(expectedSample: any CMSampleBuffer) {
+    public init(expectedSample: any CMSampleBuffer & Sendable) {
         self.expectedSample = expectedSample
     }
 

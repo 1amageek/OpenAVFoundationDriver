@@ -15,10 +15,16 @@ The initial contract implementation provides:
 - explicit provider-preferred format selection and validated default
   configuration;
 - revision-bound format and frame-rate configuration;
+- revision-bound focus, exposure, white-balance, zoom, and device-specific
+  control configuration;
+- explicit stream endpoints and validated atomic multi-stream groups;
+- typed device-topology snapshot and delta events;
 - existential-friendly provider and opened-device handle protocols;
 - zero-copy `CMSampleBuffer` sink and stream lifecycle contracts;
-- asynchronous `Sendable` operation contracts on Native Swift and WASM, with
-  synchronous owner-isolated forms on Embedded Swift.
+- a separately consumable provider-conformance testing product;
+- `Sendable` provider, handle, stream, and sink contracts on every target;
+  operations are asynchronous on Native Swift/WASM and synchronous on Embedded
+  Swift without weakening synchronization requirements.
 
 The package does not contain a concrete provider, provider registry, capture
 session, or camera-control facade. It defines the extension boundary used by
@@ -44,14 +50,25 @@ responsibility back to Apple capture semantics.
 
 ```bash
 xcodebuild test \
-  -scheme OpenAVFoundationDriver \
+  -scheme OpenAVFoundationDriver-Package \
   -destination 'platform=macOS' \
   -maximum-test-execution-time-allowance 30 \
-  SWIFT_EXEC="$HOME/Library/Developer/Toolchains/swift-latest.xctoolchain/usr/bin/swiftc"
-"$HOME/Library/Developer/Toolchains/swift-latest.xctoolchain/usr/bin/swift" build \
+  -only-testing:OpenAVFoundationDriverTests \
+  SWIFT_EXEC="$HOME/Library/Developer/Toolchains/swift-6.4.x-DEVELOPMENT-SNAPSHOT-2026-07-17-a.xctoolchain/usr/bin/swiftc"
+"$HOME/Library/Developer/Toolchains/swift-6.4.x-DEVELOPMENT-SNAPSHOT-2026-07-17-a.xctoolchain/usr/bin/swift" build \
   --swift-sdks-path "$HOME/Library/org.swift.swiftpm/swift-sdks" \
-  --swift-sdk swift-6.4.x-DEVELOPMENT-SNAPSHOT-2026-07-17-a_wasm
-"$HOME/Library/Developer/Toolchains/swift-latest.xctoolchain/usr/bin/swift" build \
+  --swift-sdk swift-6.4.x-DEVELOPMENT-SNAPSHOT-2026-07-17-a_wasm \
+  --target OpenAVFoundationDriver
+"$HOME/Library/Developer/Toolchains/swift-6.4.x-DEVELOPMENT-SNAPSHOT-2026-07-17-a.xctoolchain/usr/bin/swift" build \
   --swift-sdks-path "$HOME/Library/org.swift.swiftpm/swift-sdks" \
-  --swift-sdk swift-6.4.x-DEVELOPMENT-SNAPSHOT-2026-07-17-a_wasm-embedded
+  --swift-sdk swift-6.4.x-DEVELOPMENT-SNAPSHOT-2026-07-17-a_wasm \
+  --target OpenAVFoundationDriverTesting
+"$HOME/Library/Developer/Toolchains/swift-6.4.x-DEVELOPMENT-SNAPSHOT-2026-07-17-a.xctoolchain/usr/bin/swift" build \
+  --swift-sdks-path "$HOME/Library/org.swift.swiftpm/swift-sdks" \
+  --swift-sdk swift-6.4.x-DEVELOPMENT-SNAPSHOT-2026-07-17-a_wasm-embedded \
+  --target OpenAVFoundationDriver
+"$HOME/Library/Developer/Toolchains/swift-6.4.x-DEVELOPMENT-SNAPSHOT-2026-07-17-a.xctoolchain/usr/bin/swift" build \
+  --swift-sdks-path "$HOME/Library/org.swift.swiftpm/swift-sdks" \
+  --swift-sdk swift-6.4.x-DEVELOPMENT-SNAPSHOT-2026-07-17-a_wasm-embedded \
+  --target OpenAVFoundationDriverTesting
 ```

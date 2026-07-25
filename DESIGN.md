@@ -268,14 +268,13 @@ starts and shuts it down when the session stops or fails.
 
 The preceding asynchronous model applies to Native Swift and WASM. Under
 `hasFeature(Embedded)`, providers, opened handles, and streams expose synchronous
-owner-isolated forms of the same semantic operations, and the concurrency marker
-does not require `Sendable`. `CaptureSampleSink` inherits `AnyObject` directly
-on Embedded. This profile is verified with the fixed Swift 6.4 development
-snapshot compiler and matching Embedded SDK. Converging it with the asynchronous
-existential path requires a separate callable behavior test before changing the
-contract. Native Swift and WASM retain the `Sendable` marker. This is a platform
-execution contract, not a success fallback: concrete implementations must
-perform the operation and preserve every typed failure.
+forms of the same semantic operations. Every provider, handle, stream, event
+sink, and sample sink remains `Sendable`; Embedded mode is not evidence of
+single-threaded execution and never removes a synchronization requirement.
+Concrete implementations use `Mutex` for short memory-only state and isolate
+I/O or ordered transitions without weakening typed failures. This profile is
+verified with the fixed Swift 6.4 development snapshot compiler and matching
+Embedded SDK.
 
 ## Platform model
 
@@ -309,7 +308,9 @@ stream lifecycle, atomic multi-stream group lifecycle, device-event initial
 snapshot delivery, repeated stream, group, subscription, and handle shutdown,
 and typed error propagation.
 `CaptureSampleIdentitySink` lets deterministic replay providers prove that the
-same `CMSampleBuffer` object crosses the sink boundary.
+same `CMSampleBuffer` object crosses the sink boundary. It retains that expected
+object through an explicitly `Sendable` sample-buffer existential, so the
+identity assertion cannot weaken the cross-target ownership contract.
 `CaptureDeviceEventRecorder` verifies event order and content.
 
 The testing product does not install a provider and is not linked by the runtime
