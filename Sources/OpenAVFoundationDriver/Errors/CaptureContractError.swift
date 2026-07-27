@@ -46,7 +46,6 @@ public enum CaptureContractError: Error, Sendable, Equatable {
     case duplicateStreamID(CaptureStreamID)
     case missingStreamCombinations(CaptureDeviceID)
     case duplicateStreamCombination
-    case concurrentStreamSupportMismatch(CaptureDeviceID)
     case streamFormatNotFound(
         streamID: CaptureStreamID,
         formatID: CaptureDeviceFormatID
@@ -65,7 +64,7 @@ public enum CaptureContractError: Error, Sendable, Equatable {
         actual: UInt64
     )
     case streamRequestControlMismatch(CaptureDeviceID)
-    case duplicateVideoOrientation
+    case duplicateVideoRotationAngle
     case duplicateVideoStabilizationMode
     case duplicateVideoMirroringMode
 }

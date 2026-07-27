@@ -148,8 +148,7 @@ func capabilityContracts() throws {
             deviceID: deviceID,
             revision: 1,
             formats: [format, format],
-            preferredFormatID: formatID,
-            supportsConcurrentStreams: false
+            preferredFormatID: formatID
         )
         Issue.record("Duplicate format IDs must fail")
     } catch {
@@ -162,8 +161,7 @@ func capabilityContracts() throws {
             deviceID: deviceID,
             revision: 1,
             formats: [format],
-            preferredFormatID: missingFormatID,
-            supportsConcurrentStreams: false
+            preferredFormatID: missingFormatID
         )
         Issue.record("A missing preferred format must fail")
     } catch {
@@ -179,8 +177,7 @@ func capabilityContracts() throws {
         deviceID: deviceID,
         revision: 7,
         formats: [format],
-        preferredFormatID: formatID,
-        supportsConcurrentStreams: false
+        preferredFormatID: formatID
     )
     #expect(
         try capabilities.preferredConfiguration()
@@ -223,8 +220,7 @@ func deviceSnapshotContracts() throws {
         deviceID: secondDeviceID,
         revision: 1,
         formats: [format],
-        preferredFormatID: format.formatID,
-        supportsConcurrentStreams: false
+        preferredFormatID: format.formatID
     )
 
     do {
@@ -246,8 +242,7 @@ func deviceSnapshotContracts() throws {
         deviceID: firstDeviceID,
         revision: 2,
         formats: [format],
-        preferredFormatID: format.formatID,
-        supportsConcurrentStreams: false
+        preferredFormatID: format.formatID
     )
 
     do {
@@ -471,8 +466,7 @@ private struct DriverFixture: Sendable {
             deviceID: deviceID,
             revision: descriptor.capabilityRevision,
             formats: [format],
-            preferredFormatID: format.formatID,
-            supportsConcurrentStreams: false
+            preferredFormatID: format.formatID
         )
         let snapshot = try CaptureDeviceSnapshot(
             descriptor: descriptor,

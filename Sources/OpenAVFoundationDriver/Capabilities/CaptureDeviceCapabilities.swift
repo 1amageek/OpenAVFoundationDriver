@@ -7,23 +7,11 @@ public struct CaptureDeviceCapabilities: Sendable, Hashable {
     public let streams: [CaptureStreamDescriptor]
     public let supportedStreamCombinations: [CaptureStreamCombination]
 
-    @available(
-        *,
-        deprecated,
-        message: "Use supportedStreamCombinations as the authoritative contract."
-    )
-    public var supportsConcurrentStreams: Bool {
-        supportedStreamCombinations.contains {
-            $0.streamIDs.count > 1
-        }
-    }
-
     public init(
         deviceID: CaptureDeviceID,
         revision: UInt64,
         formats: [CaptureDeviceFormatDescriptor],
         preferredFormatID: CaptureDeviceFormatID,
-        supportsConcurrentStreams: Bool,
         controls: CaptureDeviceControlCapabilities = .none,
         streams: [CaptureStreamDescriptor] = [],
         supportedStreamCombinations: [CaptureStreamCombination] = []
@@ -72,7 +60,6 @@ public struct CaptureDeviceCapabilities: Sendable, Hashable {
         observedCombinations.reserveCapacity(
             supportedStreamCombinations.count
         )
-        var hasConcurrentCombination = false
         for combination in supportedStreamCombinations {
             for streamID in combination.streamIDs {
                 guard observedStreamIDs.contains(streamID) else {
@@ -89,11 +76,6 @@ public struct CaptureDeviceCapabilities: Sendable, Hashable {
                 throw .duplicateStreamCombination
             }
             observedCombinations.append(combination.streamIDs)
-            hasConcurrentCombination = hasConcurrentCombination
-                || combination.streamIDs.count > 1
-        }
-        guard supportsConcurrentStreams == hasConcurrentCombination else {
-            throw .concurrentStreamSupportMismatch(deviceID)
         }
 
         self.deviceID = deviceID

@@ -213,10 +213,8 @@ device and one capability revision. `validatedStreamGroupRequest` verifies every
 format, supported combination, and one-to-one sink binding before a
 `CaptureMultiStreamDeviceHandle` creates an atomic `CaptureStreamGroup`.
 
-The legacy `supportsConcurrentStreams` Boolean remains deprecated for source
-compatibility. The supported-combination list is authoritative and the
-initializer rejects disagreement between the two representations. Remove the
-Boolean in the next source-breaking release after downstream providers migrate.
+The supported-combination list is the sole authoritative concurrency contract.
+The deprecated `supportsConcurrentStreams` Boolean has been removed.
 
 ### Shutdown
 
@@ -337,8 +335,10 @@ sample because of downstream backpressure.
 ### Video connection policy
 
 `CaptureStreamRequest` carries an explicit
-`CaptureVideoConnectionConfiguration` for orientation, stabilization, and
-mirroring. The selected stream descriptor publishes supported values. Shared
+`CaptureVideoConnectionConfiguration` for rotation angle, stabilization, and
+mirroring. Rotation uses the modern 0, 90, 180, and 270 degree contract; the
+deprecated orientation enum is absent. The selected stream descriptor publishes
+supported values. Shared
 capability validation rejects each unsupported field with a specific
 `CaptureDriverError`, so a concrete provider cannot silently ignore a requested
 connection policy. A request with every field unset preserves the provider's

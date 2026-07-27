@@ -87,7 +87,7 @@ shared-state isolation or `Sendable` contracts.
 - [x] Cross-target bounded metadata validation without `Set` runtime dependence
 - [x] Capability-declared interruption, resume, source-drop, pressure, and
       terminal-failure event contract
-- [x] Typed video orientation, stabilization, and mirroring configuration
+- [x] Modern typed video rotation-angle, stabilization, and mirroring configuration
 - [x] Stream-specific validation for video connection policy
 - [x] Reusable synchronized stream-event recorder and declared-capability
       conformance validation
@@ -115,7 +115,7 @@ contract exposes event capability and sink installation without an Embedded
 runtime cast. Its shared default advertises no capability and rejects a non-nil
 sink with a typed failure, so a provider cannot silently claim event support.
 Event sinks receive ordered typed values outside provider locks, and stream
-shutdown must clear the sink before returning. Video orientation,
+shutdown must clear the sink before returning. Video rotation angle,
 stabilization, and mirroring remain part of the stream request and fail with
 field-specific typed errors when the selected stream does not advertise the
 requested value.

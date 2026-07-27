@@ -224,11 +224,11 @@ extension CaptureDeviceCapabilities {
         for stream: CaptureStreamDescriptor
     ) throws(CaptureDriverError) {
         guard let capabilities = stream.videoConnectionCapabilities else {
-            if let orientation = configuration.orientation {
-                throw .unsupportedVideoOrientation(
+            if let angle = configuration.rotationAngle {
+                throw .unsupportedVideoRotationAngle(
                     deviceID: deviceID,
                     streamID: stream.streamID,
-                    orientation: orientation
+                    angle: angle
                 )
             }
             if let mode = configuration.stabilizationMode {
@@ -248,12 +248,12 @@ extension CaptureDeviceCapabilities {
             return
         }
 
-        if let orientation = configuration.orientation,
-           !capabilities.supportedOrientations.contains(orientation) {
-            throw .unsupportedVideoOrientation(
+        if let angle = configuration.rotationAngle,
+           !capabilities.supportedRotationAngles.contains(angle) {
+            throw .unsupportedVideoRotationAngle(
                 deviceID: deviceID,
                 streamID: stream.streamID,
-                orientation: orientation
+                angle: angle
             )
         }
         if let mode = configuration.stabilizationMode,

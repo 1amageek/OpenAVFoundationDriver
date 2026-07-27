@@ -306,7 +306,7 @@ func videoConnectionContracts() throws {
         mediaSubtype: CaptureMediaSubtype(rawValue: 0)
     )
     let connectionCapabilities = try CaptureVideoConnectionCapabilities(
-        supportedOrientations: [.portrait, .landscapeRight],
+        supportedRotationAngles: [.zero, .clockwise90],
         supportedStabilizationModes: [.off, .standard],
         supportedMirroringModes: [.automatic, .disabled]
     )
@@ -327,7 +327,6 @@ func videoConnectionContracts() throws {
         revision: 1,
         formats: [format],
         preferredFormatID: formatID,
-        supportsConcurrentStreams: false,
         streams: [stream],
         supportedStreamCombinations: [
             try CaptureStreamCombination(streamIDs: [streamID])
@@ -342,7 +341,7 @@ func videoConnectionContracts() throws {
         streamID: streamID,
         configuration: configuration,
         videoConnectionConfiguration: CaptureVideoConnectionConfiguration(
-            orientation: .portrait,
+            rotationAngle: .clockwise90,
             stabilizationMode: .standard,
             mirroringMode: .automatic
         )
@@ -362,18 +361,18 @@ func videoConnectionContracts() throws {
         streamID: streamID,
         configuration: configuration,
         videoConnectionConfiguration: CaptureVideoConnectionConfiguration(
-            orientation: .portraitUpsideDown
+            rotationAngle: .clockwise180
         )
     )
     do {
         _ = try capabilities.validatedStreamRequest(unsupported)
-        Issue.record("An unsupported orientation must remain a typed failure")
+        Issue.record("An unsupported rotation must remain a typed failure")
     } catch {
         #expect(
-            error == .unsupportedVideoOrientation(
+            error == .unsupportedVideoRotationAngle(
                 deviceID: deviceID,
                 streamID: streamID,
-                orientation: .portraitUpsideDown
+                angle: .clockwise180
             )
         )
     }
@@ -383,11 +382,11 @@ func videoConnectionContracts() throws {
 func duplicateVideoConnectionCapabilitiesFail() throws {
     do {
         _ = try CaptureVideoConnectionCapabilities(
-            supportedOrientations: [.portrait, .portrait]
+            supportedRotationAngles: [.clockwise90, .clockwise90]
         )
-        Issue.record("Duplicate orientations must fail")
+        Issue.record("Duplicate rotation angles must fail")
     } catch {
-        #expect(error == .duplicateVideoOrientation)
+        #expect(error == .duplicateVideoRotationAngle)
     }
 }
 
@@ -511,7 +510,6 @@ private struct ControlFixture {
             revision: 5,
             formats: [format],
             preferredFormatID: formatID,
-            supportsConcurrentStreams: false,
             controls: controls
         )
     }
@@ -557,7 +555,6 @@ private struct MultiStreamFixture {
             revision: 3,
             formats: formats,
             preferredFormatID: mainFormatID,
-            supportsConcurrentStreams: true,
             streams: [
                 CaptureStreamDescriptor(
                     streamID: mainStreamID,

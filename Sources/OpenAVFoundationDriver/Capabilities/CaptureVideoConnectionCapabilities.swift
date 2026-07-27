@@ -1,16 +1,16 @@
 public struct CaptureVideoConnectionCapabilities: Sendable, Hashable {
-    public let supportedOrientations: [CaptureVideoOrientation]
+    public let supportedRotationAngles: [CaptureVideoRotationAngle]
     public let supportedStabilizationModes: [CaptureVideoStabilizationMode]
     public let supportedMirroringModes: [CaptureVideoMirroringMode]
 
     public init(
-        supportedOrientations: [CaptureVideoOrientation] = [],
+        supportedRotationAngles: [CaptureVideoRotationAngle] = [],
         supportedStabilizationModes: [CaptureVideoStabilizationMode] = [],
         supportedMirroringModes: [CaptureVideoMirroringMode] = []
     ) throws(CaptureContractError) {
         try Self.validateUnique(
-            supportedOrientations,
-            error: .duplicateVideoOrientation
+            supportedRotationAngles,
+            error: .duplicateVideoRotationAngle
         )
         try Self.validateUnique(
             supportedStabilizationModes,
@@ -20,7 +20,7 @@ public struct CaptureVideoConnectionCapabilities: Sendable, Hashable {
             supportedMirroringModes,
             error: .duplicateVideoMirroringMode
         )
-        self.supportedOrientations = supportedOrientations
+        self.supportedRotationAngles = supportedRotationAngles
         self.supportedStabilizationModes = supportedStabilizationModes
         self.supportedMirroringModes = supportedMirroringModes
     }
